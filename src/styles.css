@@ -1,0 +1,21 @@
+.mj-tile {
+  display: inline-block;
+  width: 32px;
+  height: 44px;
+  vertical-align: middle;
+}
+
+.mj-tiles {
+  display: inline-flex;
+  gap: 2px;
+  align-items: center;
+}
+
+.mj-tile-error {
+  display: inline-block;
+  padding: 2px 4px;
+  color: #dc2626;
+  font-size: 12px;
+  background: #fef2f2;
+  border-radius: 2px;
+}

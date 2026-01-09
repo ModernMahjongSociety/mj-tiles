@@ -1,0 +1,12 @@
+---
+import { getRenderer } from 'mj-tiles/astro'
+
+interface Props {
+  tile: string
+}
+
+const { tile } = Astro.props
+const html = getRenderer().tile(tile)
+---
+
+<Fragment set:html={html} />

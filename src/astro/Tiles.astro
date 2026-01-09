@@ -1,0 +1,12 @@
+---
+import { getRenderer } from 'mj-tiles/astro'
+
+interface Props {
+  hand: string
+}
+
+const { hand } = Astro.props
+const html = getRenderer().hand(hand)
+---
+
+<Fragment set:html={html} />

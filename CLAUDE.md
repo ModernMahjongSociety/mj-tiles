@@ -2,13 +2,51 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## プロジェクト概要
+
+これは **mj-tiles** の Turborepo モノレポです。mj-tiles は麻雀牌表示ライブラリで、React、Hono JSX、Astro などのマルチフレームワークに対応しています。
+
+### モノレポ構造
+
+```
+mj-tiles-monorepo/
+├── packages/
+│   └── mj-tiles/          # メインライブラリパッケージ
+└── apps/                  # テスト・デモアプリケーション
+    ├── astro-basic/       # Astro基本実装
+    ├── astro-mdx/         # Astro + MDX実装
+    ├── hono-jsx/          # Hono JSX実装
+    ├── next-mdx/          # Next.js + MDX実装
+    ├── react-vite/        # React + Vite実装
+    └── vite-react-mdx/    # Vite + React + MDX実装
+```
+
 ## コマンド
+
+### モノレポレベル（root）
 
 ```bash
 # 依存関係のインストール
 bun install
 
+# すべてのパッケージとアプリをビルド
+bun run build
+
+# すべてのテストを実行
+bun run test
+
+# すべてのバリデーションを実行
+bun run validate
+
+# すべての開発サーバーを起動
+bun run dev
+```
+
+### パッケージ固有（packages/mj-tiles/）
+
+```bash
 # SVGプレースホルダーを生成（開発中のみ使用）
+cd packages/mj-tiles
 bun run generate:svg
 
 # SVGアセットからTypeScriptコードを生成
@@ -29,7 +67,7 @@ bun test src/core/parser.test.ts
 
 ## アーキテクチャ
 
-### パッケージ構造
+### mj-tiles パッケージ構造
 
 このライブラリは、サブパスエクスポートを使用した単一パッケージとして設計されています：
 
@@ -49,7 +87,7 @@ core/ (パーサー + レンダラー)
 react/, hono/, astro/ (フレームワーク固有の薄いラッパー)
 ```
 
-### コアロジック（src/core/）
+### コアロジック（packages/mj-tiles/src/core/）
 
 **parser.ts** - 麻雀牌記法のパーサー
 - `parseTile(input)`: 単一牌を `TileCode` (例: "1m", "7z") に変換
@@ -69,7 +107,7 @@ react/, hono/, astro/ (フレームワーク固有の薄いラッパー)
 - `TileAssets`: アセット提供インターフェース
 - `RendererConfig`: レンダラー設定
 
-### アセット生成（src/assets/）
+### アセット生成（packages/mj-tiles/src/assets/）
 
 **generated.ts** - 自動生成ファイル
 - `src/assets/tiles/*.svg` から `bun run generate` で生成
@@ -78,44 +116,75 @@ react/, hono/, astro/ (フレームワーク固有の薄いラッパー)
 
 ### フレームワーク実装
 
-**React** (src/react/)
+**React** (packages/mj-tiles/src/react/)
 - Context API (`TileProvider`) でレンダラーを提供
 - `Tile` と `Tiles` コンポーネントは `dangerouslySetInnerHTML` でHTMLを挿入
 - `useTileRenderer` フックでレンダラーにアクセス可能
 
-**Hono JSX** (src/hono/)
+**Hono JSX** (packages/mj-tiles/src/hono/)
 - Reactと同様の構造だが、Hono JSXのエコシステム用
 - Context APIとコンポーネント構造は同一
 
-**Astro** (src/astro/)
+**Astro** (packages/mj-tiles/src/astro/)
 - `.astro` ファイルを直接エクスポート（`package.json` の `exports` で指定）
 - TypeScriptコンパイル対象外（`tsconfig.json` で除外）
 - `getRenderer()` でシングルトンレンダラーを取得
+
+### テストアプリケーション（apps/）
+
+各アプリケーションは異なるフレームワークとツールチェーンで mj-tiles ライブラリをテストするためのものです：
+
+- **astro-basic**: Astro基本実装（.astroコンポーネント）
+- **astro-mdx**: Astro + MDX統合
+- **hono-jsx**: Hono JSXでのSSRサーバー
+- **next-mdx**: Next.js App Router + MDX
+- **react-vite**: React + Vite基本実装
+- **vite-react-mdx**: Vite + React + MDX統合
 
 ## 重要な実装ルール
 
 ### 手牌記法の拡張
 
-新しい記法を追加する場合は、`src/core/parser.ts` の `parseHand()` 関数を変更します。パーサーは左から右へ1文字ずつ処理し、以下のパターンに従います：
+新しい記法を追加する場合は、`packages/mj-tiles/src/core/parser.ts` の `parseHand()` 関数を変更します。パーサーは左から右へ1文字ずつ処理し、以下のパターンに従います：
 
 1. `r` フラグで赤ドラをマーク
 2. 数字を蓄積
 3. スート文字（m/p/s/z）または漢字字牌で確定
 
-テストは `src/core/parser.test.ts` に追加してください。
+テストは `packages/mj-tiles/src/core/parser.test.ts` に追加してください。
 
 ### 新しいフレームワークの追加
 
-1. `src/{framework}/` ディレクトリを作成
+1. `packages/mj-tiles/src/{framework}/` ディレクトリを作成
 2. レンダラーを使用するコンポーネントを実装
-3. `package.json` の `exports` にサブパスを追加
+3. `packages/mj-tiles/package.json` の `exports` にサブパスを追加
 4. `peerDependencies` と `peerDependenciesMeta` を更新
+5. `apps/` に新しいテストアプリケーションを追加
 
 ### ビルドプロセス
 
-ビルドは以下の順序で実行されます：
+ビルドは Turborepo により自動的に依存関係を考慮して実行されます：
+
+1. `packages/mj-tiles` がまずビルドされる
+2. 各 `apps/*` は `packages/mj-tiles` のビルド後にビルドされる
+
+**mj-tiles パッケージのビルドステップ**:
 1. `bun run generate` - SVGファイルから `generated.ts` を生成
 2. `tsc` - TypeScriptをJavaScriptにコンパイル
 3. `cp src/styles.css dist/` - CSSファイルをコピー
 
-**注意**: `src/assets/generated.ts` は常に最新のSVGファイルから再生成されます。手動編集は失われます。
+**注意**: `packages/mj-tiles/src/assets/generated.ts` は常に最新のSVGファイルから再生成されます。手動編集は失われます。
+
+### 新しいテストアプリの追加
+
+1. `apps/{app-name}/` ディレクトリを作成
+2. フレームワークの標準構成でセットアップ
+3. `package.json` に `"mj-tiles": "workspace:*"` を追加
+4. root の `package.json` の `workspaces` に自動的に含まれる
+
+## 開発ワークフロー
+
+1. **ライブラリの変更**: `packages/mj-tiles/` で変更を行い、`bun test` でテスト
+2. **ビルド**: `bun run build` (root) でモノレポ全体をビルド
+3. **テストアプリで確認**: 各 `apps/` で動作確認
+4. **バリデーション**: `bun run validate` で全アプリのスナップショットテストを実行

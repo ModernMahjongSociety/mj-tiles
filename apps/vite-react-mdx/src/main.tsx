@@ -7,7 +7,7 @@ import 'mj-tiles/styles.css'
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
-    <TileProvider assets={defaultAssets}>
+    <TileProvider config={{ assets: defaultAssets }}>
       <App />
     </TileProvider>
   </React.StrictMode>

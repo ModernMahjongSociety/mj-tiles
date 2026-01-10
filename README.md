@@ -168,6 +168,55 @@ bun run build
 bun test
 ```
 
+## テスト実行方法
+
+このプロジェクトはTurborepoモノレポで、複数のテストアプリケーションを含んでいます。
+
+### 全体のテスト実行
+
+```bash
+# モノレポ全体のビルドとバリデーション（推奨）
+bun run build
+bun run validate
+```
+
+### 個別アプリのテスト実行
+
+各アプリケーションのテストは、**そのアプリのディレクトリから実行する**必要があります：
+
+```bash
+# Astro基本実装
+cd apps/astro-basic && bun test src/validate.test.ts
+
+# Astro + MDX
+cd apps/astro-mdx && bun test src/validate.test.ts
+
+# Hono JSX
+cd apps/hono-jsx && bun test src/validate.test.ts
+
+# Next.js + MDX
+cd apps/next-mdx && bun run build && bun test app/validate.test.tsx
+
+# React + Vite
+bun test ./apps/react-vite/src/validate.test.tsx
+
+# Vite + React + MDX
+bun test ./apps/vite-react-mdx/src/validate.test.tsx
+```
+
+**注意**: 一部のテスト（特にhono-jsx）は、Bunのモジュール解決の都合上、rootディレクトリから直接実行すると失敗する場合があります。この場合は上記のようにアプリディレクトリから実行するか、`bun run validate` で一括実行してください。
+
+### コアライブラリのテスト
+
+```bash
+# パッケージディレクトリでテスト実行
+cd packages/mj-tiles
+bun test
+
+# 特定のテストファイルのみ実行
+bun test src/core/parser.test.ts
+```
+
 ## ライセンス
 
 MIT

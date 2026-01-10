@@ -1,0 +1,24 @@
+import { Hono } from 'hono'
+import { TileProvider, Tile, Tiles, createTileConfig } from 'mj-tiles/hono'
+import { defaultAssets } from 'mj-tiles/assets'
+
+const app = new Hono()
+
+app.get('/', (c) => {
+  const renderer = createTileConfig({ assets: defaultAssets })
+
+  return c.html(
+    <TileProvider value={renderer}>
+      <html>
+        <head><title>Hono JSX Test</title></head>
+        <body>
+          <h1>Hono JSX Tiles</h1>
+          <Tile tile="1m" />
+          <Tiles hand="123m456p789s東南西" />
+        </body>
+      </html>
+    </TileProvider>
+  )
+})
+
+export default app

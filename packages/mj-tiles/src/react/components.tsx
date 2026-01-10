@@ -1,3 +1,5 @@
+"use client";
+
 import { useTileRenderer } from "./context";
 
 interface TileProps {

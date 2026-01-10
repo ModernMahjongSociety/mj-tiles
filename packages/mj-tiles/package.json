@@ -1,0 +1,71 @@
+{
+  "name": "mj-tiles",
+  "version": "0.0.1",
+  "type": "module",
+  "sideEffects": false,
+  "exports": {
+    "./core": {
+      "import": {
+        "types": "./dist/core/index.d.ts",
+        "default": "./dist/core/index.js"
+      }
+    },
+    "./assets": {
+      "import": {
+        "types": "./dist/assets/index.d.ts",
+        "default": "./dist/assets/index.js"
+      }
+    },
+    "./react": {
+      "import": {
+        "types": "./dist/react/index.d.ts",
+        "default": "./dist/react/index.js"
+      }
+    },
+    "./hono": {
+      "import": {
+        "types": "./dist/hono/index.d.ts",
+        "default": "./dist/hono/index.js"
+      }
+    },
+    "./astro": {
+      "import": {
+        "types": "./dist/astro/index.d.ts",
+        "default": "./dist/astro/index.js"
+      }
+    },
+    "./astro/Tile.astro": "./src/astro/Tile.astro",
+    "./astro/Tiles.astro": "./src/astro/Tiles.astro",
+    "./styles.css": "./dist/styles.css"
+  },
+  "files": ["dist", "src/astro/*.astro", "README.md"],
+  "scripts": {
+    "generate:svg": "bun run scripts/generate-svg-placeholders.ts",
+    "generate": "bun run scripts/generate-assets.ts",
+    "build": "bun run generate && bun run build:ts",
+    "build:ts": "tsc && bun run build:copy",
+    "build:copy": "cp src/styles.css dist/",
+    "test": "bun test",
+    "prepublishOnly": "bun run build"
+  },
+  "peerDependencies": {
+    "react": ">=18",
+    "hono": ">=4",
+    "astro": ">=4"
+  },
+  "peerDependenciesMeta": {
+    "react": { "optional": true },
+    "hono": { "optional": true },
+    "astro": { "optional": true }
+  },
+  "devDependencies": {
+    "@types/bun": "latest",
+    "@types/react": "^18",
+    "typescript": "^5.0.0",
+    "react": "^18",
+    "hono": "^4",
+    "astro": "^4",
+    "svgo": "^3"
+  },
+  "license": "MIT"
+}

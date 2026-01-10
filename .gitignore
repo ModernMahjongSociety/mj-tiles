@@ -30,3 +30,15 @@ coverage/
 # Temporary files
 *.tmp
 .cache/
+
+# Turborepo
+.turbo/
+
+# Apps
+apps/*/dist/
+apps/*/.next/
+apps/*/.astro/
+apps/*/out/
+
+# Keep snapshots in git
+!**/__snapshots__/

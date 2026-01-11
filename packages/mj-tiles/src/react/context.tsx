@@ -22,6 +22,7 @@ export function TileProvider({ config, children }: TileProviderProps) {
       createRenderer({
         assets: config?.assets ?? defaultAssets,
         mode: config?.mode,
+        styling: config?.styling,
         class: config?.class,
       }),
     [config],

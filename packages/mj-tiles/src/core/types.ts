@@ -9,6 +9,7 @@ export interface TileAssets {
 export interface RendererConfig {
   assets: TileAssets;
   mode?: "inline" | "url"; // デフォルト: inline
+  styling?: "class" | "inline"; // デフォルト: class
   class?: {
     tile?: string;
     tiles?: string;

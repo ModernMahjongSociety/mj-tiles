@@ -67,4 +67,81 @@ describe("createRenderer", () => {
     expect(html).toContain('<img class="mj-tile" src="/tiles/1m.svg"');
     expect(html).toContain('alt="1m"');
   });
+
+  describe("styling: inline mode", () => {
+    test("単一牌にインラインスタイルを適用", () => {
+      const renderer = createRenderer({
+        assets: mockAssets,
+        styling: "inline",
+      });
+      const html = renderer.tile("1m");
+      expect(html).toContain(
+        '<svg aria-label="1m" style="display:inline-block;width:32px;height:44px;vertical-align:middle">',
+      );
+      expect(html).not.toContain('class="mj-tile"');
+    });
+
+    test("手牌にインラインスタイルを適用", () => {
+      const renderer = createRenderer({
+        assets: mockAssets,
+        styling: "inline",
+      });
+      const html = renderer.hand("123m");
+      expect(html).toContain(
+        '<span style="display:inline-flex;gap:2px;align-items:center">',
+      );
+      expect(html).not.toContain('class="mj-tiles"');
+    });
+
+    test("不正な入力でインラインスタイルのエラー表示", () => {
+      const renderer = createRenderer({
+        assets: mockAssets,
+        styling: "inline",
+      });
+      const html = renderer.tile("invalid");
+      expect(html).toContain(
+        '<span style="display:inline-block;padding:2px 4px;color:#dc2626;font-size:12px;background:#fef2f2;border-radius:2px">[invalid]</span>',
+      );
+      expect(html).not.toContain('class="mj-tile-error"');
+    });
+
+    test("存在しない牌でインラインスタイルのエラー表示", () => {
+      const limitedAssets: TileAssets = {
+        getSvg: () => null,
+      };
+      const renderer = createRenderer({
+        assets: limitedAssets,
+        styling: "inline",
+      });
+      const html = renderer.tile("1m");
+      expect(html).toContain(
+        '<span style="display:inline-block;padding:2px 4px;color:#dc2626;font-size:12px;background:#fef2f2;border-radius:2px">[1m]</span>',
+      );
+    });
+
+    test("URL mode + inline styling", () => {
+      const urlAssets: TileAssets = {
+        getSvg: () => null,
+        getUrl: (code) => `/tiles/${code}.svg`,
+      };
+      const renderer = createRenderer({
+        assets: urlAssets,
+        mode: "url",
+        styling: "inline",
+      });
+      const html = renderer.tile("1m");
+      expect(html).toContain(
+        '<img style="display:inline-block;width:32px;height:44px;vertical-align:middle"',
+      );
+      expect(html).toContain('src="/tiles/1m.svg"');
+      expect(html).not.toContain('class="mj-tile"');
+    });
+
+    test("styling未指定時はデフォルトでclassを使用（後方互換性）", () => {
+      const renderer = createRenderer({ assets: mockAssets });
+      const html = renderer.tile("1m");
+      expect(html).toContain('class="mj-tile"');
+      expect(html).not.toContain('style="');
+    });
+  });
 });

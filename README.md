@@ -10,6 +10,7 @@
 - **tree-shaking対応**: 使用する部分だけがバンドルされる
 - **カスタマイズ可能**: デフォルトのSVGアセットを簡単に差し替え可能
 - **SSR/CSR両対応**: インラインモード（SSR）とURLモード（CSR）をサポート
+- **柔軟なスタイリング**: CSSクラス（デフォルト）またはインラインスタイルを選択可能
 
 ## インストール
 
@@ -41,6 +42,8 @@ function MyComponent() {
 
 ### Hono JSX
 
+#### CSSファイルを使用する場合（デフォルト）
+
 ```tsx
 import { Tiles } from "mj-tiles/hono";
 
@@ -54,6 +57,26 @@ app.get("/", (c) => {
         <Tiles hand="123m456p789s東南" />
       </body>
     </html>,
+  );
+});
+```
+
+#### バンドラーなし環境（インラインスタイル）
+
+CSSファイルの配信が難しい環境では、インラインスタイルを使用できます：
+
+```tsx
+import { TileProvider, Tiles } from "mj-tiles/hono";
+
+app.get("/", (c) => {
+  return c.html(
+    <TileProvider config={{ styling: "inline" }}>
+      <html>
+        <body>
+          <Tiles hand="123m456p789s東南" />
+        </body>
+      </html>
+    </TileProvider>,
   );
 });
 ```
@@ -132,6 +155,70 @@ function App() {
   );
 }
 ```
+
+## スタイリングオプション
+
+mj-tiles は2種類のスタイリング方法をサポートしています：
+
+### CSSクラスモード（デフォルト）
+
+デフォルトでは、牌要素にCSSクラスを付与し、外部CSSファイルでスタイリングします。
+
+```tsx
+import { Tiles } from "mj-tiles/react";
+import "mj-tiles/styles.css"; // CSSファイルのインポートが必要
+
+<Tiles hand="123m456p789s" />
+```
+
+**メリット:**
+- CSSファイルをブラウザがキャッシュできる
+- スタイルとマークアップの分離
+- カスタムCSSでのスタイルオーバーライドが容易
+
+**デメリット:**
+- CSSファイルを別途配信する必要がある
+- バンドラーなし環境では設定が複雑
+
+### インラインスタイルモード
+
+HTMLにスタイルを直接埋め込みます。CSSファイルの配信が難しい環境に最適です。
+
+```tsx
+import { TileProvider, Tiles } from "mj-tiles/react";
+
+<TileProvider config={{ styling: "inline" }}>
+  <Tiles hand="123m456p789s" />
+</TileProvider>
+```
+
+**メリット:**
+- CSSファイルが不要で、配信設定がシンプル
+- バンドラーなし環境（Hono、CDN経由のスクリプトなど）で便利
+- SSRで完全にスタイル付きのHTMLを生成
+
+**デメリット:**
+- HTMLサイズが大きくなる
+- ブラウザキャッシュが効かない
+- カスタムスタイルの適用が難しい
+
+### 使い分けガイド
+
+| 環境 | 推奨スタイリング | 理由 |
+|------|----------------|------|
+| React + Vite/Webpack | `class` | バンドラーがCSSを最適化 |
+| Next.js / Remix | `class` | フレームワークがCSS配信を処理 |
+| Astro | `class` | ビルドツールがCSS処理を行う |
+| Hono（静的ファイル配信あり） | `class` | `/public`などからCSSを配信可能 |
+| Hono（バンドラーなし） | `inline` | CSSファイル配信の設定が不要 |
+| CDN経由のスクリプト | `inline` | 外部依存を最小化 |
+
+### フレームワーク別の実装例
+
+各環境での詳しい実装例は、以下のドキュメントを参照してください：
+
+- **[Hono JSX（インラインスタイル）](./apps/hono-jsx/README.md)** - バンドラーなし環境でのインラインスタイル実装
+- **[React + Vite（CSSクラス）](./apps/react-vite/README.md)** - バンドラー環境でのCSSクラス実装とカスタマイズ方法
 
 ## URL モード（CSR向け）
 

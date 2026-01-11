@@ -100,10 +100,13 @@ react/, hono/, astro/ (フレームワーク固有の薄いラッパー)
 **renderer.ts** - HTMLレンダリングエンジン
 
 - `createRenderer(config)`: 設定から `TileRenderer` を生成
-- 2つのレンダリングモード:
+- 2つのレンダリングモード (`mode`):
   - `inline`: SVGをHTMLに直接埋め込み（SSR向け、デフォルト）
   - `url`: `<img>` タグでURLを参照（CSR向け、バンドルサイズ削減）
-- カスタムCSSクラスのサポート
+- 2つのスタイリングモード (`styling`):
+  - `class`: CSSクラスを使用（デフォルト、`styles.css`が必要）
+  - `inline`: HTMLにスタイルを直接埋め込み（CSSファイル不要、バンドラーなし環境向け）
+- カスタムCSSクラスのサポート（`class`モード時）
 
 **types.ts** - 共有型定義
 
@@ -131,6 +134,7 @@ react/, hono/, astro/ (フレームワーク固有の薄いラッパー)
 
 - Reactと同様の構造だが、Hono JSXのエコシステム用
 - Context APIとコンポーネント構造は同一
+- バンドラーなし環境で使用されることが多いため、`styling: 'inline'` オプションが有用
 
 **Astro** (packages/mj-tiles/src/astro/)
 
@@ -150,6 +154,31 @@ react/, hono/, astro/ (フレームワーク固有の薄いラッパー)
 - **vite-react-mdx**: Vite + React + MDX統合
 
 ## 重要な実装ルール
+
+### スタイリングモードの選択
+
+ライブラリは2つのスタイリングモードをサポートしています：
+
+**CSSクラスモード (`styling: 'class'`)** - デフォルト
+
+- `styles.css` ファイルを外部CSSとして読み込む必要がある
+- ブラウザキャッシュが有効で、パフォーマンスに優れる
+- カスタムCSSでスタイルをオーバーライド可能
+- バンドラー環境（Vite、Webpack、Next.jsなど）で推奨
+
+**インラインスタイルモード (`styling: 'inline'`)**
+
+- スタイルをHTML要素の `style` 属性に直接埋め込む
+- CSSファイルの配信が不要で、設定がシンプル
+- バンドラーなし環境（Hono、CDN経由のスクリプトなど）で有用
+- HTMLサイズが大きくなるが、外部依存がない
+
+**実装の注意点**:
+
+- `renderer.ts` の `createRenderer()` で `config.styling` の値を確認
+- `class` モード時は、`config.class` で指定されたCSSクラスを使用
+- `inline` モード時は、`styles.css` の内容を `style` 属性に直接埋め込む
+- デフォルトは `'class'` で、後方互換性を維持
 
 ### 手牌記法の拡張
 

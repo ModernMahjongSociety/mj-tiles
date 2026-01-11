@@ -21,4 +21,10 @@ app.get('/', (c) => {
   )
 })
 
-export default app
+// Export app instance for testing
+export { app }
+
+export default {
+  port: 3000,
+  fetch: app.fetch,
+}

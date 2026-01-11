@@ -2,7 +2,7 @@
   "name": "@apps/next-mdx",
   "private": true,
   "scripts": {
-    "dev": "next dev",
+    "dev": "next dev -p 3001",
     "build": "next build",
     "validate": "bun test app/validate.test.tsx"
   },

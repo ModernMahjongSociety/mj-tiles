@@ -1,5 +1,6 @@
 # CLAUDE.md
 
+Think in English and answer in Japanese.
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
 ## プロジェクト概要
@@ -90,12 +91,14 @@ react/, hono/, astro/ (フレームワーク固有の薄いラッパー)
 ### コアロジック（packages/mj-tiles/src/core/）
 
 **parser.ts** - 麻雀牌記法のパーサー
+
 - `parseTile(input)`: 単一牌を `TileCode` (例: "1m", "7z") に変換
 - `parseHand(input)`: 手牌記法（例: "123m456p東南"）を `TileCode[]` に変換
 - 漢字字牌（東南西北白發中）と数字形式（1-7z）の両方をサポート
 - 赤ドラの2つの記法をサポート: `0m` と `r5m`
 
 **renderer.ts** - HTMLレンダリングエンジン
+
 - `createRenderer(config)`: 設定から `TileRenderer` を生成
 - 2つのレンダリングモード:
   - `inline`: SVGをHTMLに直接埋め込み（SSR向け、デフォルト）
@@ -103,6 +106,7 @@ react/, hono/, astro/ (フレームワーク固有の薄いラッパー)
 - カスタムCSSクラスのサポート
 
 **types.ts** - 共有型定義
+
 - `TileCode`: 牌コード型（例: "1m", "2p", "3s", "7z"）
 - `TileAssets`: アセット提供インターフェース
 - `RendererConfig`: レンダラー設定
@@ -110,6 +114,7 @@ react/, hono/, astro/ (フレームワーク固有の薄いラッパー)
 ### アセット生成（packages/mj-tiles/src/assets/）
 
 **generated.ts** - 自動生成ファイル
+
 - `src/assets/tiles/*.svg` から `bun run generate` で生成
 - SVGOで最適化されたSVG文字列のRecord
 - 手動編集禁止
@@ -117,15 +122,18 @@ react/, hono/, astro/ (フレームワーク固有の薄いラッパー)
 ### フレームワーク実装
 
 **React** (packages/mj-tiles/src/react/)
+
 - Context API (`TileProvider`) でレンダラーを提供
 - `Tile` と `Tiles` コンポーネントは `dangerouslySetInnerHTML` でHTMLを挿入
 - `useTileRenderer` フックでレンダラーにアクセス可能
 
 **Hono JSX** (packages/mj-tiles/src/hono/)
+
 - Reactと同様の構造だが、Hono JSXのエコシステム用
 - Context APIとコンポーネント構造は同一
 
 **Astro** (packages/mj-tiles/src/astro/)
+
 - `.astro` ファイルを直接エクスポート（`package.json` の `exports` で指定）
 - TypeScriptコンパイル対象外（`tsconfig.json` で除外）
 - `getRenderer()` でシングルトンレンダラーを取得
@@ -169,6 +177,7 @@ react/, hono/, astro/ (フレームワーク固有の薄いラッパー)
 2. 各 `apps/*` は `packages/mj-tiles` のビルド後にビルドされる
 
 **mj-tiles パッケージのビルドステップ**:
+
 1. `bun run generate` - SVGファイルから `generated.ts` を生成
 2. `tsc` - TypeScriptをJavaScriptにコンパイル
 3. `cp src/styles.css dist/` - CSSファイルをコピー
@@ -231,14 +240,17 @@ bun test ./apps/vite-react-mdx/src/validate.test.tsx
 ### テスト実行時の重要な注意点
 
 **hono-jsxの既知の制限**:
+
 - `bun test ./apps/hono-jsx/src/validate.test.ts` (rootから直接実行) は、Bunのモジュール解決の問題で失敗します
 - 必ずアプリディレクトリから実行するか、`bun run validate` で一括実行してください
 
 **vite-react-mdxの実装**:
+
 - MDXファイルをBunテストランナーが直接トランスパイルできないため、テストではMDXファイルをインポートせず、コンポーネントを直接レンダリングしています
 - この実装により、mj-tilesライブラリの動作を正しく検証できます
 
 **next-mdxの実装**:
+
 - スナップショットテストの安定性のため、`next.config.mjs` で固定の `buildId` を使用しています
 - テスト実行前に必ず `bun run build` でNext.jsアプリをビルドしてください
 

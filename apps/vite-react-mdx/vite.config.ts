@@ -6,5 +6,8 @@ export default defineConfig({
   plugins: [
     { enforce: 'pre', ...mdx() },
     react()
-  ]
+  ],
+  server: {
+    port: 5174
+  }
 })

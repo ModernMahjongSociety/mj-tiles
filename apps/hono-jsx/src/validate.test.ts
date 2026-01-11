@@ -1,5 +1,5 @@
 import { test, expect } from 'bun:test'
-import app from './index'
+import { app } from './index'
 
 test('Hono JSX snapshot', async () => {
   const res = await app.request('/')

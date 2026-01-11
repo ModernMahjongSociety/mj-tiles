@@ -24,25 +24,27 @@ bun add mj-tiles
 ### React / Next.js / Remix
 
 ```tsx
-import { Tiles, Tile } from 'mj-tiles/react'
-import 'mj-tiles/styles.css'
+import { Tiles, Tile } from "mj-tiles/react";
+import "mj-tiles/styles.css";
 
 function MyComponent() {
   return (
     <div>
       <Tiles hand="123m456p789s東南" />
-      <p>単騎 <Tile tile="中" /> 待ち</p>
+      <p>
+        単騎 <Tile tile="中" /> 待ち
+      </p>
     </div>
-  )
+  );
 }
 ```
 
 ### Hono JSX
 
 ```tsx
-import { Tiles } from 'mj-tiles/hono'
+import { Tiles } from "mj-tiles/hono";
 
-app.get('/', (c) => {
+app.get("/", (c) => {
   return c.html(
     <html>
       <head>
@@ -51,9 +53,9 @@ app.get('/', (c) => {
       <body>
         <Tiles hand="123m456p789s東南" />
       </body>
-    </html>
-  )
-})
+    </html>,
+  );
+});
 ```
 
 ### Astro
@@ -112,22 +114,22 @@ import 'mj-tiles/styles.css'
 デフォルトのSVGアセットを独自のデザインに差し替えることができます：
 
 ```tsx
-import { TileProvider } from 'mj-tiles/react'
-import type { TileAssets } from 'mj-tiles/core'
+import { TileProvider } from "mj-tiles/react";
+import type { TileAssets } from "mj-tiles/core";
 
 const customAssets: TileAssets = {
   getSvg: (code) => {
     // 独自のSVGを返す
-    return myCustomSvgs[code]
-  }
-}
+    return myCustomSvgs[code];
+  },
+};
 
 function App() {
   return (
     <TileProvider config={{ assets: customAssets }}>
       <Tiles hand="123m456p789s" />
     </TileProvider>
-  )
+  );
 }
 ```
 
@@ -136,19 +138,19 @@ function App() {
 バンドルサイズを削減したい場合、URL参照モードを使用できます：
 
 ```tsx
-import { TileProvider } from 'mj-tiles/react'
+import { TileProvider } from "mj-tiles/react";
 
 const urlAssets = {
   getSvg: () => null,
-  getUrl: (code) => `/tiles/${code}.svg`
-}
+  getUrl: (code) => `/tiles/${code}.svg`,
+};
 
 function App() {
   return (
-    <TileProvider config={{ assets: urlAssets, mode: 'url' }}>
+    <TileProvider config={{ assets: urlAssets, mode: "url" }}>
       <Tiles hand="123m456p789s" />
     </TileProvider>
-  )
+  );
 }
 ```
 
@@ -216,7 +218,3 @@ bun test
 # 特定のテストファイルのみ実行
 bun test src/core/parser.test.ts
 ```
-
-## ライセンス
-
-MIT

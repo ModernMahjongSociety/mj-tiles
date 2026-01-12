@@ -19,3 +19,44 @@
   background: #fef2f2;
   border-radius: 2px;
 }
+
+/* Phase 3: 拡張記法対応のスタイル */
+
+/* 手牌全体 */
+.mj-hand {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+/* 門前牌 */
+.mj-hand-concealed {
+  display: inline-flex;
+  gap: 2px;
+  align-items: center;
+}
+
+/* 副露面子のコンテナ */
+.mj-hand-melds {
+  display: inline-flex;
+  gap: 8px;
+  align-items: center;
+}
+
+/* 個別の面子 */
+.mj-meld {
+  display: inline-flex;
+  gap: 2px;
+  align-items: center;
+}
+
+/* 横向きの牌（副露牌） */
+.mj-tile-rotated {
+  transform: rotate(90deg);
+  transform-origin: center center;
+}
+
+/* 伏せ牌（暗槓の両端） */
+.mj-tile-facedown {
+  /* 特別なスタイルが必要な場合はここに追加 */
+}

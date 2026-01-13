@@ -4,7 +4,7 @@
 
 ## 特徴
 
-- **マルチフレームワーク対応**: React、Hono JSX、Astro で使用可能
+- **マルチフレームワーク対応**: React、Hono JSX、Astro（+ React/Preact/Solid islands）で使用可能
 - **単一パッケージ**: サブパスエクスポートで必要な部分だけをインポート
 - **TypeScript完全対応**: 型安全な開発が可能
 - **tree-shaking対応**: 使用する部分だけがバンドルされる
@@ -132,6 +132,28 @@ import 'mj-tiles/styles.css'
 <Tiles hand="r5mr5pr5s" />  // 赤5萬、赤5筒、赤5索
 ```
 
+### 副露記法（拡張）
+
+副露（鳴き）の表現には `parseHandExtended` を使用します。2つの記法方式をサポート：
+
+**新篠ゆう方式**（推奨）:
+- チー: `1-23m`（左鳴き）、`12-3m`（右鳴き）
+- ポン: `5=55p`（左鳴き）、`55=5p`（右鳴き）
+- 大明槓: `1=111s`、加槓: `+1111s`
+- 暗槓: `o1111so`
+
+**牌画作成くん方式**:
+- 横向き牌: `y` プレフィックス（例: `y5m`）
+- 伏せ牌: `o` プレフィックス（例: `o5m`）
+
+```tsx
+// 拡張記法の使用例
+import { parseHandExtended } from "mj-tiles/core";
+
+const hand = parseHandExtended("123m 1-23p 55=5s 東南西");
+// → 門前牌 + チー + ポン + 字牌
+```
+
 ## カスタムアセット
 
 デフォルトのSVGアセットを独自のデザインに差し替えることができます：
@@ -215,10 +237,12 @@ import { TileProvider, Tiles } from "mj-tiles/react";
 
 ### フレームワーク別の実装例
 
-各環境での詳しい実装例は、以下のドキュメントを参照してください：
+各環境での詳しい実装例は、以下のテストアプリを参照してください：
 
-- **[Hono JSX（インラインスタイル）](./apps/hono-jsx/README.md)** - バンドラーなし環境でのインラインスタイル実装
-- **[React + Vite（CSSクラス）](./apps/react-vite/README.md)** - バンドラー環境でのCSSクラス実装とカスタマイズ方法
+- **[Astro](./apps/astro/)** - Astro実装（.astro + MDX + React/Preact/Solid islands）
+- **[Hono](./apps/hono/)** - Hono JSXでのSSRサーバー（インラインスタイル）
+- **[Next.js](./apps/next/)** - Next.js App Router + MDX
+- **[React](./apps/react/)** - React + Vite実装（TSX + MDX統合）
 
 ## URL モード（CSR向け）
 
@@ -271,29 +295,23 @@ bun run validate
 
 ### 個別アプリのテスト実行
 
-各アプリケーションのテストは、**そのアプリのディレクトリから実行する**必要があります：
+各アプリケーションのテストは、**そのアプリのディレクトリから実行する**ことを推奨します：
 
 ```bash
-# Astro基本実装
-cd apps/astro-basic && bun test src/validate.test.ts
-
-# Astro + MDX
-cd apps/astro-mdx && bun test src/validate.test.ts
+# Astro（.astro + MDX + React/Preact/Solid islands）
+cd apps/astro && bun test src/validate.test.ts
 
 # Hono JSX
-cd apps/hono-jsx && bun test src/validate.test.ts
+cd apps/hono && bun test src/validate.test.ts
 
-# Next.js + MDX
-cd apps/next-mdx && bun run build && bun test app/validate.test.tsx
+# Next.js（ビルドが必要）
+cd apps/next && bun run build && bun test app/validate.test.tsx
 
-# React + Vite
-bun test ./apps/react-vite/src/validate.test.tsx
-
-# Vite + React + MDX
-bun test ./apps/vite-react-mdx/src/validate.test.tsx
+# React + Vite（rootから実行可能）
+bun test ./apps/react/src/validate.test.tsx
 ```
 
-**注意**: 一部のテスト（特にhono-jsx）は、Bunのモジュール解決の都合上、rootディレクトリから直接実行すると失敗する場合があります。この場合は上記のようにアプリディレクトリから実行するか、`bun run validate` で一括実行してください。
+**注意**: 一部のテスト（特にhono）は、Bunのモジュール解決の都合上、rootディレクトリから直接実行すると失敗する場合があります。この場合は上記のようにアプリディレクトリから実行するか、`bun run validate` で一括実行してください。
 
 ### コアライブラリのテスト
 

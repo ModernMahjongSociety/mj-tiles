@@ -92,8 +92,17 @@ react/, hono/, astro/ (フレームワーク固有の薄いラッパー)
 
 - `parseTile(input)`: 単一牌を `TileCode` (例: "1m", "7z") に変換
 - `parseHand(input)`: 手牌記法（例: "123m456p東南"）を `TileCode[]` に変換
+- `parseHandExtended(input)`: 副露（鳴き）を含む拡張記法を `Hand` オブジェクトに変換
 - 漢字字牌（東南西北白發中）と数字形式（1-7z）の両方をサポート
 - 赤ドラの2つの記法をサポート: `0m` と `r5m`
+
+**副露記法**（parseHandExtended で使用）:
+
+- **新篠ゆう方式**: `-`（チー）、`=`（ポン）、`+`（加槓）を使用
+  - チー: `1-23m`（左鳴き）、`12-3m`（右鳴き）
+  - ポン: `5=55p`（左鳴き）、`55=5p`（右鳴き）
+  - 大明槓: `1=111s`、加槓: `+1111s`、暗槓: `o1111so`
+- **牌画作成くん方式**: `y`（横向き）、`o`（伏せ牌）プレフィックスを使用
 
 **renderer.ts** - HTMLレンダリングエンジン
 
@@ -116,8 +125,9 @@ react/, hono/, astro/ (フレームワーク固有の薄いラッパー)
 
 **generated.ts** - 自動生成ファイル
 
-- `src/assets/tiles/*.svg` から `bun run generate` で生成
-- SVGOで最適化されたSVG文字列のRecord
+- `src/assets/tiles-images/*.webp` から `bun run generate` で生成
+- WebP画像をBase64エンコードしたデータURIのRecord
+- 通常の牌と横向き牌（-rotated）の両方を含む
 - 手動編集禁止
 
 ### フレームワーク実装
@@ -144,7 +154,7 @@ react/, hono/, astro/ (フレームワーク固有の薄いラッパー)
 
 各アプリケーションは異なるフレームワークとツールチェーンで mj-tiles ライブラリをテストするためのものです。各アプリは複数のパターン（基本TSX/astroとMDX）を1つのアプリ内でテストします：
 
-- **astro**: Astro実装（.astro + MDX + React islands + Preact islands）
+- **astro**: Astro実装（.astro + MDX + React/Preact/Solid islands）
 - **hono**: Hono JSXでのSSRサーバー（インラインスタイリング）
 - **next**: Next.js App Router + MDX
 - **react**: React + Vite実装（TSX + MDX統合）
@@ -203,11 +213,11 @@ react/, hono/, astro/ (フレームワーク固有の薄いラッパー)
 
 **mj-tiles パッケージのビルドステップ**:
 
-1. `bun run generate` - SVGファイルから `generated.ts` を生成
+1. `bun run generate` - WebP画像ファイルから `generated.ts` を生成
 2. `tsc` - TypeScriptをJavaScriptにコンパイル
 3. `cp src/styles.css dist/` - CSSファイルをコピー
 
-**注意**: `packages/mj-tiles/src/assets/generated.ts` は常に最新のSVGファイルから再生成されます。手動編集は失われます。
+**注意**: `packages/mj-tiles/src/assets/generated.ts` は常に最新のWebP画像から再生成されます。手動編集は失われます。
 
 ### 新しいテストアプリの追加
 

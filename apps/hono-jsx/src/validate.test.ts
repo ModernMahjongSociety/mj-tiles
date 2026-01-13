@@ -6,5 +6,5 @@ test('Hono JSX snapshot', async () => {
   const html = await res.text()
 
   expect(html).toMatchSnapshot()
-  expect(html).toContain('<svg')
+  expect(html).toContain('<img')  // WebP画像を使用
 })

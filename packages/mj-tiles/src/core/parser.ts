@@ -211,8 +211,21 @@ export function parseHandExtended(input: string): Hand {
       // 新篠ゆう方式
       melds.push(parseArasinoMeld(part));
     } else if (part.includes('y') || part.includes('o')) {
-      // 牌画作成くん方式
-      melds.push(parsePaigaMeld(part));
+      // 単純な修飾子付き牌（o1m, y2p など）は門前牌として扱う
+      const simplePattern = /^[oy]\d[mpsz]$/;
+      if (simplePattern.test(part)) {
+        const modifier = part[0];
+        const num = part[1];
+        const suit = part[2];
+        concealed.push({
+          code: `${num}${suit}` as TileCode,
+          isFaceDown: modifier === 'o',
+          isRotated: modifier === 'y',
+        });
+      } else {
+        // 牌画作成くん方式（副露）
+        melds.push(parsePaigaMeld(part));
+      }
     } else {
       // 通常の門前牌
       const tiles = parseSimpleTiles(part);

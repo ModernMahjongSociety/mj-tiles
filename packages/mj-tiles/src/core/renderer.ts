@@ -37,13 +37,22 @@ export function createRenderer(config: RendererConfig): TileRenderer {
     if (mode === "url" && config.assets.getUrl) {
       const url = config.assets.getUrl(code);
       if (styling === "inline") {
-        return `<img style="${inlineStyles.tile}" src="${url}" alt="${label}" width="32" height="44" />`;
+        return `<img style="${inlineStyles.tile}" src="${url}" alt="${label}" width="32" height="44" loading="lazy" />`;
       }
-      return `<img class="${cls.tile}" src="${url}" alt="${label}" width="32" height="44" />`;
+      return `<img class="${cls.tile}" src="${url}" alt="${label}" width="32" height="44" loading="lazy" />`;
     }
 
     const svg = config.assets.getSvg(code);
     if (!svg) {
+      // SVGがない場合、getUrlにフォールバック
+      if (config.assets.getUrl) {
+        const url = config.assets.getUrl(code);
+        if (styling === "inline") {
+          return `<img style="${inlineStyles.tile}" src="${url}" alt="${label}" width="32" height="44" loading="lazy" />`;
+        }
+        return `<img class="${cls.tile}" src="${url}" alt="${label}" width="32" height="44" loading="lazy" />`;
+      }
+      // SVGもURLもない場合、エラー表示
       if (styling === "inline") {
         return `<span style="${inlineStyles.error}">[${label}]</span>`;
       }
@@ -82,15 +91,37 @@ export function createRenderer(config: RendererConfig): TileRenderer {
     }
 
     if (mode === "url" && config.assets.getUrl) {
-      const url = config.assets.getUrl(code as TileCode | 'back');
+      const url = config.assets.getUrl(code as TileCode | 'back', tile.isRotated);
+      // 横向き画像を使用する場合、CSSのrotatedクラスは不要
+      const finalClasses = tile.isRotated
+        ? [cls.tile, tile.isFaceDown ? cls.faceDown : ''].filter(Boolean)
+        : classes;
+
       if (styling === "inline") {
-        return `<img style="${styleStr}" src="${url}" alt="${label}" width="32" height="44" />`;
+        // 横向き画像を使用する場合、CSS rotateは不要
+        const finalStyle = tile.isRotated ? inlineStyles.tile : styleStr;
+        return `<img style="${finalStyle}" src="${url}" alt="${label}" width="32" height="44" loading="lazy" />`;
       }
-      return `<img class="${classes.join(' ')}" src="${url}" alt="${label}" width="32" height="44" />`;
+      return `<img class="${finalClasses.join(' ')}" src="${url}" alt="${label}" width="32" height="44" loading="lazy" />`;
     }
 
     const svg = config.assets.getSvg(code as TileCode | 'back');
     if (!svg) {
+      // SVGがない場合、getUrlにフォールバック
+      if (config.assets.getUrl) {
+        const url = config.assets.getUrl(code as TileCode | 'back', tile.isRotated);
+        // 横向き画像を使用する場合、CSSのrotatedクラスは不要
+        const finalClasses = tile.isRotated
+          ? [cls.tile, tile.isFaceDown ? cls.faceDown : ''].filter(Boolean)
+          : classes;
+        const finalStyle = tile.isRotated ? inlineStyles.tile : styleStr;
+
+        if (styling === "inline") {
+          return `<img style="${finalStyle}" src="${url}" alt="${label}" width="32" height="44" loading="lazy" />`;
+        }
+        return `<img class="${finalClasses.join(' ')}" src="${url}" alt="${label}" width="32" height="44" loading="lazy" />`;
+      }
+      // SVGもURLもない場合、エラー表示
       if (styling === "inline") {
         return `<span style="${inlineStyles.error}">[${label}]</span>`;
       }

@@ -40,8 +40,8 @@
   },
   "files": ["dist", "src/astro/*.astro", "README.md"],
   "scripts": {
-    "generate:svg": "bun run scripts/generate-svg-placeholders.ts",
-    "generate": "bun run scripts/generate-assets.ts",
+    "convert:images": "bun run scripts/convert-images.ts",
+    "generate": "bun run scripts/generate-webp-assets.ts",
     "build": "bun run generate && bun run build:ts",
     "build:ts": "tsc && bun run build:copy",
     "build:copy": "cp src/styles.css dist/",
@@ -54,18 +54,25 @@
     "astro": ">=4"
   },
   "peerDependenciesMeta": {
-    "react": { "optional": true },
-    "hono": { "optional": true },
-    "astro": { "optional": true }
+    "react": {
+      "optional": true
+    },
+    "hono": {
+      "optional": true
+    },
+    "astro": {
+      "optional": true
+    }
   },
   "devDependencies": {
     "@types/bun": "latest",
     "@types/react": "^18",
-    "typescript": "^5.0.0",
-    "react": "^18",
-    "hono": "^4",
     "astro": "^4",
-    "svgo": "^3"
+    "hono": "^4",
+    "react": "^18",
+    "sharp": "^0.34.5",
+    "svgo": "^3",
+    "typescript": "^5.0.0"
   },
   "license": "MIT"
 }

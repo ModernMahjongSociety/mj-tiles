@@ -17,5 +17,6 @@ interface TilesProps {
 
 export const Tiles: FC<TilesProps> = ({ hand }) => {
   const renderer = useTileRenderer();
-  return raw(renderer.hand(hand));
+  // 拡張記法をサポート（副露、裏面など）
+  return raw(renderer.handExtended ? renderer.handExtended(hand) : renderer.hand(hand));
 };

@@ -23,7 +23,8 @@ interface TilesProps {
 
 export function Tiles({ hand, className }: TilesProps) {
   const renderer = useTileRenderer();
-  const html = renderer.hand(hand);
+  // 拡張記法をサポート（副露、裏面など）
+  const html = renderer.handExtended ? renderer.handExtended(hand) : renderer.hand(hand);
 
   return (
     <span className={className} dangerouslySetInnerHTML={{ __html: html }} />

@@ -1,0 +1,20 @@
+---
+import TilesDemo from '../components/solid/TilesDemo'
+import Tile from 'mj-tiles/astro/Tile.astro'
+import Tiles from 'mj-tiles/astro/Tiles.astro'
+---
+<html>
+  <head>
+    <title>Astro + Solid Test</title>
+    <link rel="stylesheet" href="mj-tiles/styles.css" />
+  </head>
+  <body>
+    <h1>Astro + Solid Integration</h1>
+
+    <h2>Astro Native (.astro)</h2>
+    <Tile tile="5s" />
+    <Tiles hand="一九一九一九東南西北白發中" />
+
+    <TilesDemo client:only="solid-js" />
+  </body>
+</html>

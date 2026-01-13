@@ -1,0 +1,14 @@
+{
+  "name": "@apps/hono",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "bun run src/index.tsx",
+    "build": "bun build src/index.tsx --outdir=dist --target=bun",
+    "validate": "bun test src/validate.test.ts"
+  },
+  "dependencies": {
+    "mj-tiles": "workspace:*",
+    "hono": "^4.0.0"
+  }
+}

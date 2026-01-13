@@ -1,0 +1,15 @@
+{
+  "name": "@apps/astro",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "astro dev",
+    "build": "astro build",
+    "validate": "bun test src/validate.test.ts"
+  },
+  "dependencies": {
+    "mj-tiles": "workspace:*",
+    "astro": "^4.0.0",
+    "@astrojs/mdx": "^2.0.0"
+  }
+}

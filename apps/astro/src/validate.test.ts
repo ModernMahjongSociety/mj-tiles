@@ -35,3 +35,8 @@ test('Astro Preact snapshot', async () => {
   const html = await readFile(join(__dirname, '../dist/preact/index.html'), 'utf-8')
   expect(normalizeAstroHtml(html)).toMatchSnapshot()
 })
+
+test('Astro Solid snapshot', async () => {
+  const html = await readFile(join(__dirname, '../dist/solid/index.html'), 'utf-8')
+  expect(normalizeAstroHtml(html)).toMatchSnapshot()
+})

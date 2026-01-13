@@ -103,3 +103,11 @@ bun run validate # テスト実行
 ```
 
 詳細は [テスト実行方法](./docs/testing.md) を参照してください。
+
+## 謝辞
+
+本ライブラリで使用している麻雀牌画像は、[麻雀豆腐](https://majandofu.com)さんの[麻雀牌画像素材](https://majandofu.com/mahjong-images)を使用させていただいております。素敵な素材を提供してくださり、ありがとうございます。
+
+牌姿表記は、以下を参考にさせていただきました：
+- [新篠ゆう](https://note.com/yuarasino)さんの[MPSZ拡張表記案](https://note.com/yuarasino/n/n1ba95bf3b618)
+- [牌画作成くん byその研](https://mahjong-manage.com/paiga/paiga1.php)

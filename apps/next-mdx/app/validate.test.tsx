@@ -14,8 +14,8 @@ function normalizeNextHtml(html: string): string {
   return html
     // Normalize chunk filenames: 161-8100e0ea7d1493cf.js -> 161-[hash].js
     .replace(/(\d+)-[a-f0-9]{16}\.js/g, '$1-[hash].js')
-    // Normalize page chunks: page-149a0c95f9c09a37.js -> page-[hash].js
-    .replace(/(page|layout)-[a-f0-9]{16}\.js/g, '$1-[hash].js')
+    // Normalize named chunks: page-[hash].js, layout-[hash].js, main-app-[hash].js
+    .replace(/(page|layout|main-app)-[a-f0-9]{16}\.js/g, '$1-[hash].js')
 }
 
 test('Next.js MDX snapshot', async () => {

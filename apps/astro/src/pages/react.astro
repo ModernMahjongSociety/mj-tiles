@@ -1,0 +1,20 @@
+---
+import TilesDemo from '../components/react/TilesDemo'
+import Tile from 'mj-tiles/astro/Tile.astro'
+import Tiles from 'mj-tiles/astro/Tiles.astro'
+---
+<html>
+  <head>
+    <title>Astro + React Test</title>
+    <link rel="stylesheet" href="mj-tiles/styles.css" />
+  </head>
+  <body>
+    <h1>Astro + React Integration</h1>
+
+    <h2>Astro Native (.astro)</h2>
+    <Tile tile="5m" />
+    <Tiles hand="東南西北" />
+
+    <TilesDemo client:load />
+  </body>
+</html>

@@ -1,0 +1,20 @@
+---
+import TilesDemo from '../components/preact/TilesDemo'
+import Tile from 'mj-tiles/astro/Tile.astro'
+import Tiles from 'mj-tiles/astro/Tiles.astro'
+---
+<html>
+  <head>
+    <title>Astro + Preact Test</title>
+    <link rel="stylesheet" href="mj-tiles/styles.css" />
+  </head>
+  <body>
+    <h1>Astro + Preact Integration</h1>
+
+    <h2>Astro Native (.astro)</h2>
+    <Tile tile="5p" />
+    <Tiles hand="白發中" />
+
+    <TilesDemo client:only="preact" />
+  </body>
+</html>

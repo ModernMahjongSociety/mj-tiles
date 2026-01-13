@@ -14,12 +14,10 @@ mj-tiles-monorepo/
 ├── packages/
 │   └── mj-tiles/          # メインライブラリパッケージ
 └── apps/                  # テスト・デモアプリケーション
-    ├── astro-basic/       # Astro基本実装
-    ├── astro-mdx/         # Astro + MDX実装
-    ├── hono-jsx/          # Hono JSX実装
-    ├── next-mdx/          # Next.js + MDX実装
-    ├── react-vite/        # React + Vite実装
-    └── vite-react-mdx/    # Vite + React + MDX実装
+    ├── astro/             # Astro（.astro + MDX）
+    ├── hono/              # Hono JSX
+    ├── next/              # Next.js（App Router + MDX）
+    └── react/             # React + Vite（TSX + MDX）
 ```
 
 ## コマンド
@@ -144,14 +142,12 @@ react/, hono/, astro/ (フレームワーク固有の薄いラッパー)
 
 ### テストアプリケーション（apps/）
 
-各アプリケーションは異なるフレームワークとツールチェーンで mj-tiles ライブラリをテストするためのものです：
+各アプリケーションは異なるフレームワークとツールチェーンで mj-tiles ライブラリをテストするためのものです。各アプリは複数のパターン（基本TSX/astroとMDX）を1つのアプリ内でテストします：
 
-- **astro-basic**: Astro基本実装（.astroコンポーネント）
-- **astro-mdx**: Astro + MDX統合
-- **hono-jsx**: Hono JSXでのSSRサーバー
-- **next-mdx**: Next.js App Router + MDX
-- **react-vite**: React + Vite基本実装
-- **vite-react-mdx**: Vite + React + MDX統合
+- **astro**: Astro実装（.astro + MDX + React islands + Preact islands）
+- **hono**: Hono JSXでのSSRサーバー（インラインスタイリング）
+- **next**: Next.js App Router + MDX
+- **react**: React + Vite実装（TSX + MDX統合）
 
 ## 重要な実装ルール
 
@@ -247,38 +243,32 @@ cd packages/mj-tiles && bun test
 各テストアプリケーションのテストは、**アプリのディレクトリから実行する**ことを推奨します：
 
 ```bash
-# Astro基本実装
-cd apps/astro-basic && bun test src/validate.test.ts
-
-# Astro + MDX
-cd apps/astro-mdx && bun test src/validate.test.ts
+# Astro（.astro + MDX）
+cd apps/astro && bun test src/validate.test.ts
 
 # Hono JSX
-cd apps/hono-jsx && bun test src/validate.test.ts
+cd apps/hono && bun test src/validate.test.ts
 
-# Next.js + MDX（ビルドが必要）
-cd apps/next-mdx && bun run build && bun test app/validate.test.tsx
+# Next.js（ビルドが必要）
+cd apps/next && bun run build && bun test app/validate.test.tsx
 
 # React + Vite（rootから実行可能）
-bun test ./apps/react-vite/src/validate.test.tsx
-
-# Vite + React + MDX（rootから実行可能）
-bun test ./apps/vite-react-mdx/src/validate.test.tsx
+bun test ./apps/react/src/validate.test.tsx
 ```
 
 ### テスト実行時の重要な注意点
 
-**hono-jsxの既知の制限**:
+**honoの既知の制限**:
 
-- `bun test ./apps/hono-jsx/src/validate.test.ts` (rootから直接実行) は、Bunのモジュール解決の問題で失敗します
+- `bun test ./apps/hono/src/validate.test.ts` (rootから直接実行) は、Bunのモジュール解決の問題で失敗します
 - 必ずアプリディレクトリから実行するか、`bun run validate` で一括実行してください
 
-**vite-react-mdxの実装**:
+**reactの実装**:
 
 - MDXファイルをBunテストランナーが直接トランスパイルできないため、テストではMDXファイルをインポートせず、コンポーネントを直接レンダリングしています
 - この実装により、mj-tilesライブラリの動作を正しく検証できます
 
-**next-mdxの実装**:
+**nextの実装**:
 
 - スナップショットテストの安定性のため、`next.config.mjs` で固定の `buildId` を使用しています
 - テスト実行前に必ず `bun run build` でNext.jsアプリをビルドしてください
@@ -291,6 +281,6 @@ bun test ./apps/vite-react-mdx/src/validate.test.tsx
 # 全体のスナップショット更新
 bun run validate --update-snapshots
 
-# 個別アプリのスナップショット更新（例：hono-jsx）
-cd apps/hono-jsx && bun test src/validate.test.ts --update-snapshots
+# 個別アプリのスナップショット更新（例：hono）
+cd apps/hono && bun test src/validate.test.ts --update-snapshots
 ```

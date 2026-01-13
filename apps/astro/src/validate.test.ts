@@ -10,8 +10,10 @@ function normalizeAstroHtml(html: string): string {
   return html
     // astro-island の uid を正規化
     .replace(/uid="[^"]+"/g, 'uid="[uid]"')
-    // _astro/ 配下のファイルハッシュを正規化
-    .replace(/\/_astro\/([^.]+)\.[A-Za-z0-9_-]+\.js/g, '/_astro/$1.[hash].js')
+    // prefix 属性を正規化
+    .replace(/prefix="[^"]+"/g, 'prefix="[prefix]"')
+    // _astro/ 配下のファイルハッシュを正規化（component-url, href, src など全て）
+    .replace(/(\/_astro\/\w+)\.[A-Za-z0-9_-]+\.js/g, '$1.[hash].js')
 }
 
 test('Astro basic snapshot', async () => {

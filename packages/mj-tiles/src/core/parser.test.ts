@@ -256,6 +256,12 @@ describe("validateMeld", () => {
     expect(validateMeld(["1z", "2z", "3z"], "chii")).toBe(false); // 字牌はチー不可
   });
 
+  test("赤ドラを含むチーの検証", () => {
+    expect(validateMeld(["3m", "4m", "0m"], "chii")).toBe(true); // 345、赤5
+    expect(validateMeld(["0p", "4p", "6p"], "chii")).toBe(true); // 456、赤5
+    expect(validateMeld(["4s", "0s", "6s"], "chii")).toBe(true); // 456、赤5
+  });
+
   test("ポンの検証", () => {
     expect(validateMeld(["5m", "5m", "5m"], "pon")).toBe(true);
     expect(validateMeld(["5m", "0m", "5m"], "pon")).toBe(true); // 赤ドラ混在OK
@@ -447,23 +453,23 @@ describe("副露内の赤ドラ", () => {
     expect(result.melds[0].tiles[0].code).toBe("0m");
   });
 
-  test("チーで赤入り（456）- 現在の動作", () => {
-    // 注意: isSequence関数は0（赤ドラ）を5として認識しないため、ponと判定される
-    // これは既知の制限事項
+  test("チーで赤入り（456）", () => {
+    // 赤ドラを含むチーが正しく判定される
     const result = parseHandExtended("0-46m");
-    // 実際の動作: 0,4,6 は連続しないためponと判定
-    expect(result.melds[0].type).toBe("pon");
+    expect(result.melds[0].type).toBe("chii");
+    expect(result.melds[0].tiles[0].code).toBe("0m");
+    expect(result.melds[0].tiles[0].isRotated).toBe(true);
+    expect(result.melds[0].from).toBe("kamicha");
   });
 
-  test("チーで赤入り（345）- 現在の動作", () => {
-    // 注意: isSequence関数は0（赤ドラ）を5として認識しないため、ponと判定される
-    const result = parseHandExtended("3-05m");
-    // 実際の動作: 3,0,5 は連続しないためponと判定
-    expect(result.melds[0].type).toBe("pon");
+  test("チーで赤入り（345）", () => {
+    // 赤ドラを含むチーが正しく判定される（3-40m = 三、四、赤五）
+    const result = parseHandExtended("3-40m");
+    expect(result.melds[0].type).toBe("chii");
+    expect(result.melds[0].tiles.map(t => t.code)).toEqual(["3m", "4m", "0m"]);
   });
 
-  // TODO: 赤ドラを含むチーを正しく判定するにはisSequence関数の修正が必要
-  test("チーで赤入り（正しい記法: 3-45m）", () => {
+  test("チーで赤入り（通常の記法: 3-45m）", () => {
     // 赤ドラを使わない通常のチー
     const result = parseHandExtended("3-45m");
     expect(result.melds[0].type).toBe("chii");
@@ -472,41 +478,54 @@ describe("副露内の赤ドラ", () => {
 });
 
 describe("牌画作成くん方式の赤ドラ", () => {
-  test("横向き+赤ドラ（a5形式）- 現在の動作", () => {
-    // normalizeNotationでa5は0に変換されるが、parsePaigaMeldでは
-    // isRotatedがtiles配列に正しく設定されない（既知の制限）
+  test("横向き+赤ドラ（a5形式）", () => {
+    // normalizeNotationでa5 → 0に変換、parsePaigaMeldで正しく処理
     const result = parseHandExtended("5ya55m");
     expect(result.melds[0].type).toBe("pon");
     // calledTileIndexは正しく1に設定される
     expect(result.melds[0].calledTileIndex).toBe(1);
-    // 注意: tiles[1].isRotatedがtrueになるべきだが、現在の実装では設定されない
-    // これは牌画作成くん方式パーサーの制限事項
+    // tiles[1].isRotatedがtrueに正しく設定される
+    expect(result.melds[0].tiles[1].isRotated).toBe(true);
+    expect(result.melds[0].tiles[1].code).toBe("0m");
     expect(result.melds[0].from).toBe("kamicha");
   });
 
-  test("横向き+赤ドラ（0形式）- 現在の動作", () => {
-    // 5y055m は 5牌が4枚（y付き1枚 + 0 + 5 + 5）と解釈され大明槓になる
-    const result = parseHandExtended("5y055m");
-    // 牌画作成くん方式では数字の解釈が異なる
-    expect(result.melds[0].type).toBe("daiminkan");
+  test("横向き+赤ドラ（0形式）", () => {
+    // 5y05m は 3枚のポンとして解釈される
+    const result = parseHandExtended("5y05m");
+    expect(result.melds[0].type).toBe("pon");
+    expect(result.melds[0].tiles[1].isRotated).toBe(true);
   });
 
   test("横向きポンで赤入り（55y0m記法）", () => {
-    // 赤入りポンは新篠ゆう方式を推奨: 55-0m
+    // 牌画作成くん方式の赤入りポン
+    const result = parseHandExtended("55y0m");
+    expect(result.melds[0].type).toBe("pon");
+    expect(result.melds[0].tiles[2].code).toBe("0m");
+    expect(result.melds[0].tiles[2].isRotated).toBe(true);
+  });
+
+  test("横向きポンで赤入り（新篠ゆう方式）", () => {
+    // 赤入りポンは新篠ゆう方式でも動作
     const result = parseHandExtended("55-0m");
     expect(result.melds[0].type).toBe("pon");
     expect(result.melds[0].tiles[2].code).toBe("0m");
   });
 
-  test("暗槓で赤入り（新篠ゆう方式推奨）", () => {
-    // 赤入り暗槓は新篠ゆう方式の方が明確で信頼性が高い
+  test("暗槓で赤入り（新篠ゆう方式）", () => {
     const result = parseHandExtended("5550+m");
     expect(result.melds[0].type).toBe("ankan");
     expect(result.melds[0].tiles.map(t => t.code)).toContain("0m");
   });
 
-  // 牌画作成くん方式の暗槓（o...o記法）は複雑なためスキップ
-  // 新篠ゆう方式（1111+z）の使用を推奨
+  test("暗槓で赤入り（牌画作成くん方式 末尾スート形式）", () => {
+    // o550om = 赤5入りの暗槓
+    const result = parseHandExtended("o550om");
+    expect(result.melds[0].type).toBe("ankan");
+    expect(result.melds[0].tiles.map(t => t.code)).toContain("0m");
+    expect(result.melds[0].tiles[0].isFaceDown).toBe(true);
+    expect(result.melds[0].tiles[4].isFaceDown).toBe(true);
+  });
 });
 
 describe("修飾子組み合わせのエッジケース", () => {

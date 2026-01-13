@@ -82,8 +82,9 @@ export function getTileLabel(code: TileCode): string {
 export function normalizeNotation(input: string): string {
   let normalized = input.trim();
 
-  // a5m → 0m（赤ドラ）
-  normalized = normalized.replace(/a5([mps])/g, '0$1');
+  // a5 → 0（赤ドラ）
+  // 後続がスート文字でも数字でも対応（例: a5m → 0m, ya55m → y05m）
+  normalized = normalized.replace(/a5/g, '0');
 
   // 字牌独自記号 → z形式
   // r5m 形式は保護（赤ドラ）
@@ -122,8 +123,11 @@ export function validateMeld(tiles: TileCode[], type: MeldType): boolean {
     // 全て同じスートか確認
     if (!tiles.every(t => t[1] === suit)) return false;
 
-    // 連続性チェック
-    const nums = tiles.map(parseTileNumber).sort((a, b) => a - b);
+    // 連続性チェック（赤ドラ0を5として正規化）
+    const nums = tiles.map(t => {
+      const n = parseTileNumber(t);
+      return n === 0 ? 5 : n;
+    }).sort((a, b) => a - b);
     return nums[1] - nums[0] === 1 && nums[2] - nums[1] === 1;
   }
 
@@ -338,16 +342,21 @@ function parsePaigaMeld(input: string): MeldInfo {
   let rotatedIndex = -1;
   let i = 0;
 
-  // 特殊パターン: o[数字]+[スート]o （暗槓）
+  // 特殊パターン: o[数字]+[スート]o または o[数字]+o[スート]（暗槓）
   // o33so = 3索の暗槓（両端が伏せ牌、中の2枚が見える）
-  const ankanPattern = /^o(\d+)([mpsz])o$/;
-  const ankanMatch = input.match(ankanPattern);
+  // o550om = 赤5萬入り暗槓（末尾にスート文字）
+  const ankanPattern1 = /^o(\d+)([mpsz])o$/;  // 従来形式: o33so
+  const ankanPattern2 = /^o(\d+)o([mpsz])$/;  // 末尾スート形式: o550om
+  const ankanMatch1 = input.match(ankanPattern1);
+  const ankanMatch2 = input.match(ankanPattern2);
+  const ankanMatch = ankanMatch1 || ankanMatch2;
   if (ankanMatch) {
     const nums = ankanMatch[1].split('');
     const suit = ankanMatch[2];
 
     // 暗槓は4枚なので、見える牌（nums）から4枚を生成
     // o33so の場合: [3s(伏), 3s, 3s, 3s(伏)]
+    // o550om の場合: [5m(伏), 5m, 5m, 0m(伏)]
 
     // 最初の牌を伏せ牌として追加
     tiles.push({
@@ -364,7 +373,7 @@ function parsePaigaMeld(input: string): MeldInfo {
 
     // 最後の牌を伏せ牌として追加
     tiles.push({
-      code: `${nums[0]}${suit}` as TileCode,
+      code: `${nums[nums.length - 1]}${suit}` as TileCode,
       isFaceDown: true,
     });
 
@@ -498,6 +507,10 @@ function isSequence(codes: TileCode[]): boolean {
   if (suit === 'z') return false;
   if (!codes.every(c => c[1] === suit)) return false;
 
-  const nums = codes.map(parseTileNumber).sort((a, b) => a - b);
+  // 赤ドラ（0）を5として正規化してから連続性をチェック
+  const nums = codes.map(c => {
+    const n = parseTileNumber(c);
+    return n === 0 ? 5 : n;
+  }).sort((a, b) => a - b);
   return nums[1] - nums[0] === 1 && nums[2] - nums[1] === 1;
 }

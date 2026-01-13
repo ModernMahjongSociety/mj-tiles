@@ -14,3 +14,13 @@ test('Astro MDX snapshot', async () => {
   const html = await readFile(join(__dirname, '../dist/mdx/index.html'), 'utf-8')
   expect(html).toMatchSnapshot()
 })
+
+test('Astro React snapshot', async () => {
+  const html = await readFile(join(__dirname, '../dist/react/index.html'), 'utf-8')
+  expect(html).toMatchSnapshot()
+})
+
+test('Astro Preact snapshot', async () => {
+  const html = await readFile(join(__dirname, '../dist/preact/index.html'), 'utf-8')
+  expect(html).toMatchSnapshot()
+})

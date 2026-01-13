@@ -144,7 +144,7 @@ react/, hono/, astro/ (フレームワーク固有の薄いラッパー)
 
 各アプリケーションは異なるフレームワークとツールチェーンで mj-tiles ライブラリをテストするためのものです。各アプリは複数のパターン（基本TSX/astroとMDX）を1つのアプリ内でテストします：
 
-- **astro**: Astro実装（.astroコンポーネント + MDX統合）
+- **astro**: Astro実装（.astro + MDX + React islands + Preact islands）
 - **hono**: Hono JSXでのSSRサーバー（インラインスタイリング）
 - **next**: Next.js App Router + MDX
 - **react**: React + Vite実装（TSX + MDX統合）

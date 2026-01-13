@@ -10,6 +10,11 @@
   "dependencies": {
     "mj-tiles": "workspace:*",
     "astro": "^4.0.0",
-    "@astrojs/mdx": "^2.0.0"
+    "@astrojs/mdx": "^2.0.0",
+    "@astrojs/react": "^3.0.0",
+    "@astrojs/preact": "^3.0.0",
+    "react": "^18.0.0",
+    "react-dom": "^18.0.0",
+    "preact": "^10.0.0"
   }
 }

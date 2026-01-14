@@ -18,15 +18,15 @@ export function createRenderer(config: RendererConfig): TileRenderer {
   };
 
   const inlineStyles = {
-    tile: "display:inline-block;width:32px;height:44px;vertical-align:middle",
-    tiles: "display:inline-flex;gap:2px;align-items:center",
+    tile: "display:inline-block;height:1.5em;width:auto;vertical-align:-0.3em",
+    tiles: "display:inline-flex;gap:2px;align-items:center;vertical-align:-0.3em",
     error:
       "display:inline-block;padding:2px 4px;color:#dc2626;font-size:12px;background:#fef2f2;border-radius:2px",
     // 拡張機能用のインラインスタイル
-    hand: "display:flex;gap:8px;align-items:center",
-    concealed: "display:inline-flex;gap:2px;align-items:center",
-    melds: "display:inline-flex;gap:8px;align-items:center",
-    meld: "display:inline-flex;gap:2px;align-items:center",
+    hand: "display:inline-flex;gap:8px;align-items:center;vertical-align:-0.3em",
+    concealed: "display:inline-flex;gap:2px;align-items:center;vertical-align:-0.3em",
+    melds: "display:inline-flex;gap:8px;align-items:center;vertical-align:-0.3em",
+    meld: "display:inline-flex;gap:2px;align-items:center;vertical-align:-0.3em",
     rotated: "transform:rotate(90deg);transform-origin:center center",
     faceDown: "",
   };
@@ -37,9 +37,9 @@ export function createRenderer(config: RendererConfig): TileRenderer {
     if (mode === "url" && config.assets.getUrl) {
       const url = config.assets.getUrl(code);
       if (styling === "inline") {
-        return `<img style="${inlineStyles.tile}" src="${url}" alt="${label}" width="32" height="44" loading="lazy" />`;
+        return `<img style="${inlineStyles.tile}" src="${url}" alt="${label}" loading="lazy" />`;
       }
-      return `<img class="${cls.tile}" src="${url}" alt="${label}" width="32" height="44" loading="lazy" />`;
+      return `<img class="${cls.tile}" src="${url}" alt="${label}" loading="lazy" />`;
     }
 
     const svg = config.assets.getSvg(code);
@@ -48,9 +48,9 @@ export function createRenderer(config: RendererConfig): TileRenderer {
       if (config.assets.getUrl) {
         const url = config.assets.getUrl(code);
         if (styling === "inline") {
-          return `<img style="${inlineStyles.tile}" src="${url}" alt="${label}" width="32" height="44" loading="lazy" />`;
+          return `<img style="${inlineStyles.tile}" src="${url}" alt="${label}" loading="lazy" />`;
         }
-        return `<img class="${cls.tile}" src="${url}" alt="${label}" width="32" height="44" loading="lazy" />`;
+        return `<img class="${cls.tile}" src="${url}" alt="${label}" loading="lazy" />`;
       }
       // SVGもURLもない場合、エラー表示
       if (styling === "inline") {
@@ -100,9 +100,9 @@ export function createRenderer(config: RendererConfig): TileRenderer {
       if (styling === "inline") {
         // 横向き画像を使用する場合、CSS rotateは不要
         const finalStyle = tile.isRotated ? inlineStyles.tile : styleStr;
-        return `<img style="${finalStyle}" src="${url}" alt="${label}" width="32" height="44" loading="lazy" />`;
+        return `<img style="${finalStyle}" src="${url}" alt="${label}" loading="lazy" />`;
       }
-      return `<img class="${finalClasses.join(' ')}" src="${url}" alt="${label}" width="32" height="44" loading="lazy" />`;
+      return `<img class="${finalClasses.join(' ')}" src="${url}" alt="${label}" loading="lazy" />`;
     }
 
     const svg = config.assets.getSvg(code as TileCode | 'back');
@@ -117,9 +117,9 @@ export function createRenderer(config: RendererConfig): TileRenderer {
         const finalStyle = tile.isRotated ? inlineStyles.tile : styleStr;
 
         if (styling === "inline") {
-          return `<img style="${finalStyle}" src="${url}" alt="${label}" width="32" height="44" loading="lazy" />`;
+          return `<img style="${finalStyle}" src="${url}" alt="${label}" loading="lazy" />`;
         }
-        return `<img class="${finalClasses.join(' ')}" src="${url}" alt="${label}" width="32" height="44" loading="lazy" />`;
+        return `<img class="${finalClasses.join(' ')}" src="${url}" alt="${label}" loading="lazy" />`;
       }
       // SVGもURLもない場合、エラー表示
       if (styling === "inline") {

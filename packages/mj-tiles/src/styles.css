@@ -1,14 +1,15 @@
 .mj-tile {
   display: inline-block;
-  width: 32px;
-  height: 44px;
-  vertical-align: middle;
+  height: 1.5em;
+  width: auto;
+  vertical-align: -0.3em;
 }
 
 .mj-tiles {
   display: inline-flex;
   gap: 2px;
   align-items: center;
+  vertical-align: -0.3em;
 }
 
 .mj-tile-error {
@@ -24,9 +25,10 @@
 
 /* 手牌全体 */
 .mj-hand {
-  display: flex;
+  display: inline-flex;
   gap: 8px;
   align-items: center;
+  vertical-align: -0.3em;
 }
 
 /* 門前牌 */
@@ -34,6 +36,7 @@
   display: inline-flex;
   gap: 2px;
   align-items: center;
+  vertical-align: -0.3em;
 }
 
 /* 副露面子のコンテナ */
@@ -41,6 +44,7 @@
   display: inline-flex;
   gap: 8px;
   align-items: center;
+  vertical-align: -0.3em;
 }
 
 /* 個別の面子 */
@@ -48,6 +52,7 @@
   display: inline-flex;
   gap: 2px;
   align-items: center;
+  vertical-align: -0.3em;
 }
 
 /* 横向きの牌（副露牌） */

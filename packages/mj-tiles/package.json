@@ -1,6 +1,28 @@
 {
   "name": "mj-tiles",
-  "version": "0.0.1",
+  "version": "0.1.0",
+  "description": "Multi-framework mahjong tile display library for React, Hono JSX, and Astro with MDX support",
+  "keywords": [
+    "mahjong",
+    "麻雀",
+    "tiles",
+    "react",
+    "hono",
+    "astro",
+    "mdx",
+    "jsx",
+    "typescript"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ModernMahjongSociety/mj-tiles.git",
+    "directory": "packages/mj-tiles"
+  },
+  "homepage": "https://github.com/ModernMahjongSociety/mj-tiles#readme",
+  "bugs": {
+    "url": "https://github.com/ModernMahjongSociety/mj-tiles/issues"
+  },
+  "author": "Kenta Kobayashi",
   "type": "module",
   "sideEffects": false,
   "exports": {
@@ -38,7 +60,11 @@
     "./astro/Tiles.astro": "./src/astro/Tiles.astro",
     "./styles.css": "./dist/styles.css"
   },
-  "files": ["dist", "src/astro/*.astro", "README.md"],
+  "files": [
+    "dist",
+    "src/astro/*.astro",
+    "README.md"
+  ],
   "scripts": {
     "convert:images": "bun run scripts/convert-images.ts",
     "generate": "bun run scripts/generate-webp-assets.ts",

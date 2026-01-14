@@ -76,7 +76,7 @@ describe("createRenderer", () => {
       });
       const html = renderer.tile("1m");
       expect(html).toContain(
-        '<svg aria-label="1m" style="display:inline-block;width:32px;height:44px;vertical-align:middle">',
+        '<svg aria-label="1m" style="display:inline-block;height:1.5em;width:auto;vertical-align:-0.3em">',
       );
       expect(html).not.toContain('class="mj-tile"');
     });
@@ -88,7 +88,7 @@ describe("createRenderer", () => {
       });
       const html = renderer.hand("123m");
       expect(html).toContain(
-        '<span style="display:inline-flex;gap:2px;align-items:center">',
+        '<span style="display:inline-flex;gap:2px;align-items:center;vertical-align:-0.3em">',
       );
       expect(html).not.toContain('class="mj-tiles"');
     });
@@ -131,7 +131,7 @@ describe("createRenderer", () => {
       });
       const html = renderer.tile("1m");
       expect(html).toContain(
-        '<img style="display:inline-block;width:32px;height:44px;vertical-align:middle"',
+        '<img style="display:inline-block;height:1.5em;width:auto;vertical-align:-0.3em"',
       );
       expect(html).toContain('src="/tiles/1m.svg"');
       expect(html).not.toContain('class="mj-tile"');

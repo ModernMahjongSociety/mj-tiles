@@ -110,115 +110,127 @@ function App() {
 
 ---
 
-## トラブルシューティング
+## CSS変数によるカスタマイズ
 
-### 画像が大きく表示される / スタイルが効かない
-
-mj-tilesの画像が意図したサイズで表示されない場合、プロジェクトのCSSとの**詳細度（specificity）の競合**が原因である可能性があります。
-
-#### 原因
-
-多くのプロジェクトでは、リセットCSSやレイアウトスタイルで`img`要素に対してスタイルを設定しています：
+mj-tilesはCSS変数を使用しており、簡単にスタイルをカスタマイズできます：
 
 ```css
-/* よくあるリセットCSS */
-img {
-  max-width: 100%;
-  height: auto;
-  display: block;
-}
+:root {
+  /* 牌のサイズ */
+  --mj-tile-height: 2em;        /* デフォルト: 1.5em */
+  --mj-tile-vertical-align: -0.4em;  /* デフォルト: -0.3em */
 
-/* レイアウトスタイルの例 */
-.content img {
-  height: auto;
-  border-radius: 8px;
-  margin: 24px 0;
-}
-```
+  /* 牌の間隔 */
+  --mj-tiles-gap: 4px;          /* デフォルト: 2px */
+  --mj-hand-gap: 12px;          /* 副露間の間隔、デフォルト: 8px */
 
-これらのスタイルがmj-tilesの`.mj-tile`クラスより高い詳細度を持つ場合、`height: auto`が適用され、画像が元のサイズ（非常に大きい）で表示されます。
-
-| セレクタ | 詳細度 |
-|----------|--------|
-| `.mj-tile` | (0, 1, 0) |
-| `img` | (0, 0, 1) |
-| `.content img` | (0, 1, 1) ← `.mj-tile`より高い |
-
-#### 解決方法
-
-**方法1: 競合するスタイルからmj-tileを除外する（推奨）**
-
-```css
-/* Before */
-.content img {
-  height: auto;
-  border-radius: 8px;
-  margin: 24px 0;
-}
-
-/* After */
-.content img:not(.mj-tile) {
-  height: auto;
-  border-radius: 8px;
-  margin: 24px 0;
+  /* エラー表示 */
+  --mj-error-color: #dc2626;
+  --mj-error-bg: #fef2f2;
 }
 ```
 
-**方法2: 高い詳細度でmj-tileのスタイルを定義する**
-
-```css
-/* グローバルCSSに追加 */
-img.mj-tile {
-  display: inline-block;
-  height: 2em;  /* お好みのサイズに調整 */
-  width: auto;
-  vertical-align: -0.4em;
-}
-```
-
-#### Astro での例
-
-Astroのスコープ付きスタイルで`:global()`を使用している場合：
-
-```astro
-<style>
-  /* Before */
-  .content :global(img) {
-    height: auto;
-    border-radius: 8px;
-    margin: 24px 0;
-  }
-
-  /* After */
-  .content :global(img:not(.mj-tile)) {
-    height: auto;
-    border-radius: 8px;
-    margin: 24px 0;
-  }
-</style>
-```
-
-### サイズのカスタマイズ
-
-デフォルトのサイズ（`height: 1.5em`）を変更したい場合は、以下のようにCSSを追加してください：
-
-```css
-img.mj-tile {
-  height: 2em;  /* 大きめ */
-  vertical-align: -0.4em;  /* サイズに応じて調整 */
-}
-```
-
-`em`単位を使用することで、周囲のテキストサイズに応じて自動的にスケールします。
+`em`単位を使用しているため、周囲のテキストサイズに応じて自動的にスケールします。
 
 ---
 
-## 補足: なぜ `import 'mj-tiles/styles.css'` だけでは不十分な場合があるのか
+## Tailwind CSS との統合
 
-mj-tilesのスタイルシートをインポートしても、以下の理由でスタイルが効かないことがあります：
+mj-tilesのCSSは`@layer components`を使用しており、Tailwind CSSとシームレスに統合できます。
 
-1. **CSSの読み込み順序**: プロジェクトのグローバルCSSやレイアウトスタイルが後に読み込まれると、同じ詳細度のスタイルは上書きされる
-2. **詳細度の競合**: `.content img`のような複合セレクタは`.mj-tile`より詳細度が高い
-3. **フレームワーク固有の挙動**: Astroのスコープ付きスタイルなど、フレームワークによってはスタイルの適用順序が異なる
+### 基本的な使い方
 
-これらの問題を回避するため、プロジェクト側でmj-tileを除外する設定を追加することを推奨します。
+```tsx
+import { Tiles } from "mj-tiles/react";
+import "mj-tiles/styles.css";  // Tailwindのスタイルと一緒にインポート
+
+<Tiles hand="123m456p789s" />
+```
+
+### ユーティリティクラスでの上書き
+
+Tailwindの`utilities`レイヤーは`components`より優先されるため、ユーティリティクラスで直接スタイルを上書きできます：
+
+```tsx
+// 牌を大きく表示
+<Tiles hand="123m" className="[&_.mj-tile]:h-8" />
+
+// 間隔を広げる
+<Tiles hand="123m" className="gap-2" />
+```
+
+### CSS変数をTailwindテーマと統合
+
+`tailwind.config.js`でCSS変数をテーマに追加：
+
+```js
+// tailwind.config.js
+export default {
+  theme: {
+    extend: {
+      height: {
+        'tile': 'var(--mj-tile-height, 1.5em)',
+        'tile-lg': '2em',
+        'tile-xl': '2.5em',
+      },
+    },
+  },
+}
+```
+
+```tsx
+<Tiles hand="123m" className="[&_.mj-tile]:h-tile-lg" />
+```
+
+### グローバルでサイズを変更
+
+```css
+/* globals.css */
+@layer base {
+  :root {
+    --mj-tile-height: 2em;
+  }
+}
+```
+
+---
+
+## 詳細度の設計
+
+mj-tilesは`.mj-tile.mj-tile`セレクタを使用し、詳細度を`(0, 2, 0)`に設定しています。これにより、一般的なリセットCSSやレイアウトスタイルとの競合を回避できます：
+
+| セレクタ | 詳細度 | 結果 |
+|----------|--------|------|
+| `img` | (0, 0, 1) | mj-tilesが勝つ |
+| `.content img` | (0, 1, 1) | mj-tilesが勝つ |
+| `.mj-tile.mj-tile` | (0, 2, 0) | ← mj-tiles |
+| `#main img` | (1, 0, 1) | IDセレクタが勝つ |
+
+IDセレクタを使用している場合は、CSS変数で上書きするか、より高い詳細度でスタイルを定義してください。
+
+---
+
+## トラブルシューティング
+
+### それでもスタイルが効かない場合
+
+1. **CSSファイルがインポートされているか確認**
+   ```tsx
+   import "mj-tiles/styles.css";
+   ```
+
+2. **IDセレクタとの競合**
+   IDセレクタ（`#content img`など）は詳細度が高いため、CSS変数で対応：
+   ```css
+   #content {
+     --mj-tile-height: 1.5em;
+   }
+   ```
+
+3. **インラインスタイルモードを使用**
+   CSSの競合を完全に回避したい場合：
+   ```tsx
+   <TileProvider config={{ styling: "inline" }}>
+     <Tiles hand="123m" />
+   </TileProvider>
+   ```

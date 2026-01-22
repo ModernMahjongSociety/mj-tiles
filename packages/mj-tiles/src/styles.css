@@ -1,67 +1,89 @@
-.mj-tile {
-  display: inline-block;
-  height: 1.5em;
-  width: auto;
-  vertical-align: -0.3em;
-}
+/*
+ * mj-tiles CSS
+ *
+ * @layer components を使用してTailwind CSSと互換性を確保。
+ * CSS変数でカスタマイズ可能。
+ *
+ * Tailwindプロジェクトでは、このCSSはそのままインポート可能:
+ *   import "mj-tiles/styles.css"
+ *
+ * Tailwindの utilities クラスで上書きできます:
+ *   <Tiles hand="123m" className="h-8" />
+ */
 
-.mj-tiles {
-  display: inline-flex;
-  gap: 2px;
-  align-items: center;
-  vertical-align: -0.3em;
-}
+@layer components {
+  /*
+   * 単一の牌
+   * .mj-tile.mj-tile で詳細度を (0, 2, 0) に上げ、
+   * .content img などの (0, 1, 1) セレクタに勝つ
+   */
+  .mj-tile.mj-tile {
+    display: inline-block;
+    height: var(--mj-tile-height, 1.5em);
+    width: auto;
+    vertical-align: var(--mj-tile-vertical-align, -0.3em);
+  }
 
-.mj-tile-error {
-  display: inline-block;
-  padding: 2px 4px;
-  color: #dc2626;
-  font-size: 12px;
-  background: #fef2f2;
-  border-radius: 2px;
-}
+  /* 牌の並び（複数牌） */
+  .mj-tiles {
+    display: inline-flex;
+    gap: var(--mj-tiles-gap, 2px);
+    align-items: center;
+    vertical-align: var(--mj-tile-vertical-align, -0.3em);
+  }
 
-/* Phase 3: 拡張記法対応のスタイル */
+  /* エラー表示 */
+  .mj-tile-error {
+    display: inline-block;
+    padding: 2px 4px;
+    color: var(--mj-error-color, #dc2626);
+    font-size: 12px;
+    background: var(--mj-error-bg, #fef2f2);
+    border-radius: 2px;
+  }
 
-/* 手牌全体 */
-.mj-hand {
-  display: inline-flex;
-  gap: 8px;
-  align-items: center;
-  vertical-align: -0.3em;
-}
+  /* === 拡張記法対応のスタイル === */
 
-/* 門前牌 */
-.mj-hand-concealed {
-  display: inline-flex;
-  gap: 2px;
-  align-items: center;
-  vertical-align: -0.3em;
-}
+  /* 手牌全体 */
+  .mj-hand {
+    display: inline-flex;
+    gap: var(--mj-hand-gap, 8px);
+    align-items: center;
+    vertical-align: var(--mj-tile-vertical-align, -0.3em);
+  }
 
-/* 副露面子のコンテナ */
-.mj-hand-melds {
-  display: inline-flex;
-  gap: 8px;
-  align-items: center;
-  vertical-align: -0.3em;
-}
+  /* 門前牌 */
+  .mj-hand-concealed {
+    display: inline-flex;
+    gap: var(--mj-tiles-gap, 2px);
+    align-items: center;
+    vertical-align: var(--mj-tile-vertical-align, -0.3em);
+  }
 
-/* 個別の面子 */
-.mj-meld {
-  display: inline-flex;
-  gap: 2px;
-  align-items: center;
-  vertical-align: -0.3em;
-}
+  /* 副露面子のコンテナ */
+  .mj-hand-melds {
+    display: inline-flex;
+    gap: var(--mj-hand-gap, 8px);
+    align-items: center;
+    vertical-align: var(--mj-tile-vertical-align, -0.3em);
+  }
 
-/* 横向きの牌（副露牌） */
-.mj-tile-rotated {
-  transform: rotate(90deg);
-  transform-origin: center center;
-}
+  /* 個別の面子 */
+  .mj-meld {
+    display: inline-flex;
+    gap: var(--mj-tiles-gap, 2px);
+    align-items: center;
+    vertical-align: var(--mj-tile-vertical-align, -0.3em);
+  }
 
-/* 伏せ牌（暗槓の両端） */
-.mj-tile-facedown {
-  /* 特別なスタイルが必要な場合はここに追加 */
+  /* 横向きの牌（副露牌） */
+  .mj-tile-rotated {
+    transform: rotate(90deg);
+    transform-origin: center center;
+  }
+
+  /* 伏せ牌（暗槓の両端） */
+  .mj-tile-facedown {
+    /* 特別なスタイルが必要な場合はここに追加 */
+  }
 }

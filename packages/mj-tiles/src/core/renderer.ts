@@ -143,6 +143,46 @@ export function createRenderer(config: RendererConfig): TileRenderer {
     return svgWithAttrs;
   }
 
+  // 副露のaria-labelを生成する関数
+  function getMeldAriaLabel(meld: MeldInfo): string {
+    const getTileLabel = (t: TileState) => t.isFaceDown ? getBackTileAriaLabel() : getTileAriaLabel(t.code);
+
+    switch (meld.type) {
+      case 'chii': {
+        // チー: 「{鳴いた牌}をチー {牌1} {牌2} {牌3}」
+        const calledTile = meld.tiles[meld.calledTileIndex ?? 0];
+        const calledLabel = getTileLabel(calledTile);
+        const allLabels = meld.tiles.map(getTileLabel).join(" ");
+        return `${calledLabel}をチー ${allLabels}`;
+      }
+      case 'pon': {
+        // ポン: 「{鳴いた牌}をポン」
+        const calledTile = meld.tiles[meld.calledTileIndex ?? 0];
+        const calledLabel = getTileLabel(calledTile);
+        return `${calledLabel}をポン`;
+      }
+      case 'daiminkan': {
+        // 大明槓: 「みんかん {牌}」
+        const tileLabel = getTileLabel(meld.tiles[0]);
+        return `みんかん ${tileLabel}`;
+      }
+      case 'ankan': {
+        // 暗槓: 「あんかん {牌}」
+        // 伏せ牌でない中央の牌からラベルを取得
+        const visibleTile = meld.tiles.find(t => !t.isFaceDown) ?? meld.tiles[0];
+        const tileLabel = getTileLabel(visibleTile);
+        return `あんかん ${tileLabel}`;
+      }
+      case 'kakan': {
+        // 加槓: 「かかん {牌}」
+        const tileLabel = getTileLabel(meld.tiles[0]);
+        return `かかん ${tileLabel}`;
+      }
+      default:
+        return meld.tiles.map(getTileLabel).join(" ");
+    }
+  }
+
   // Phase 3: MeldInfoをレンダリングする関数
   function renderMeld(meld: MeldInfo): string {
     const tilesHtml = meld.tiles.map(renderTileState).join("");
@@ -170,18 +210,18 @@ export function createRenderer(config: RendererConfig): TileRenderer {
 
     const parts = [concealedHtml, meldsHtml].filter(p => p.length > 0);
 
-    // ひらがな読み上げラベルを生成
-    const allTiles = [
-      ...hand.concealed.map(t => t.isFaceDown ? getBackTileAriaLabel() : getTileAriaLabel(t.code)),
-      ...hand.melds.flatMap(m => m.tiles.map(t => t.isFaceDown ? getBackTileAriaLabel() : getTileAriaLabel(t.code)))
-    ];
-    const ariaLabel = allTiles.join(" ");
+    // ひらがな読み上げラベルを生成（門前牌 + 副露）
+    const concealedLabels = hand.concealed.map(t => t.isFaceDown ? getBackTileAriaLabel() : getTileAriaLabel(t.code));
+    const meldLabels = hand.melds.map(getMeldAriaLabel);
+    const ariaLabel = [...concealedLabels, ...meldLabels].join(" ");
+
+    const fallbackHtml = `<span class="mj-hand-fallback" aria-hidden="true">${input}</span>`;
 
     if (styling === "inline") {
-      return `<span style="${inlineStyles.hand}" role="img" alt="${input}" aria-label="${ariaLabel}">${parts.join("")}</span>`;
+      return `<span style="${inlineStyles.hand}" role="img" aria-label="${ariaLabel}">${parts.join("")}${fallbackHtml}</span>`;
     }
 
-    return `<span class="${cls.hand}" role="img" alt="${input}" aria-label="${ariaLabel}">${parts.join("")}</span>`;
+    return `<span class="${cls.hand}" role="img" aria-label="${ariaLabel}">${parts.join("")}${fallbackHtml}</span>`;
   }
 
   return {
@@ -193,17 +233,24 @@ export function createRenderer(config: RendererConfig): TileRenderer {
         }
         return `<span class="${cls.error}">[${input}]</span>`;
       }
-      return renderTileCode(code);
+      const ariaLabel = getTileAriaLabel(code);
+      const tileHtml = renderTileCode(code);
+      const fallbackHtml = `<span class="mj-tile-fallback" aria-hidden="true">${input}</span>`;
+      if (styling === "inline") {
+        return `<span style="${inlineStyles.tile}" role="img" aria-label="${ariaLabel}">${tileHtml}${fallbackHtml}</span>`;
+      }
+      return `<span class="${cls.tile}-wrapper" role="img" aria-label="${ariaLabel}">${tileHtml}${fallbackHtml}</span>`;
     },
 
     hand(input: string): string {
       const codes = parseHand(input);
       const rendered = codes.map(renderTileCode).join("");
       const ariaLabel = codes.map(getTileAriaLabel).join(" ");
+      const fallbackHtml = `<span class="mj-tiles-fallback" aria-hidden="true">${input}</span>`;
       if (styling === "inline") {
-        return `<span style="${inlineStyles.tiles}" role="img" alt="${input}" aria-label="${ariaLabel}">${rendered}</span>`;
+        return `<span style="${inlineStyles.tiles}" role="img" aria-label="${ariaLabel}">${rendered}${fallbackHtml}</span>`;
       }
-      return `<span class="${cls.tiles}" role="img" alt="${input}" aria-label="${ariaLabel}">${rendered}</span>`;
+      return `<span class="${cls.tiles}" role="img" aria-label="${ariaLabel}">${rendered}${fallbackHtml}</span>`;
     },
 
     // Phase 3: 拡張記法対応の手牌レンダリング

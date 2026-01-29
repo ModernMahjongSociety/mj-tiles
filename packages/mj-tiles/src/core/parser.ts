@@ -127,7 +127,7 @@ export function getTileAriaLabel(code: TileCode): string {
 }
 
 export function getBackTileAriaLabel(): string {
-  return "うら";
+  return "えっくす";
 }
 
 // Phase 0: 正規化関数

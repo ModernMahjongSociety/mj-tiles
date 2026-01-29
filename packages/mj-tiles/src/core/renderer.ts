@@ -1,5 +1,5 @@
 import type { TileCode, RendererConfig, TileRenderer, TileState, MeldInfo, Hand } from "./types";
-import { parseTile, parseHand, parseHandExtended, getTileLabel, getTileAriaLabel, getBackTileAriaLabel } from "./parser";
+import { parseTile, parseHand, parseHandExtended, getTileLabel, getTileAriaLabel, getBackTileAriaLabel, getTileNumberAria, getTileSuitAria } from "./parser";
 
 export function createRenderer(config: RendererConfig): TileRenderer {
   const mode = config.mode ?? "inline";
@@ -149,11 +149,12 @@ export function createRenderer(config: RendererConfig): TileRenderer {
 
     switch (meld.type) {
       case 'chii': {
-        // チー: 「{鳴いた牌}をチー {牌1} {牌2} {牌3}」
+        // チー: 「{鳴いた牌}をチー {数字1} {数字2} {数字3} {スート}」
         const calledTile = meld.tiles[meld.calledTileIndex ?? 0];
         const calledLabel = getTileLabel(calledTile);
-        const allLabels = meld.tiles.map(getTileLabel).join(" ");
-        return `${calledLabel}をチー ${allLabels}`;
+        const numbers = meld.tiles.map(t => getTileNumberAria(t.code)).join(" ");
+        const suit = getTileSuitAria(meld.tiles[0].code);
+        return `${calledLabel}をチー ${numbers} ${suit}`;
       }
       case 'pon': {
         // ポン: 「{鳴いた牌}をポン」

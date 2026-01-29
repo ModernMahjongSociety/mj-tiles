@@ -76,6 +76,35 @@ const CODE_TO_ARIA_LABEL: Record<string, string> = {
   "7z": "ちゅん",
 };
 
+// 数字のひらがな読み（チーの読み上げ用）
+const NUMBER_TO_ARIA: Record<string, string> = {
+  "1": "いち",
+  "2": "りゃん",
+  "3": "さん",
+  "4": "すー",
+  "5": "うー",
+  "6": "ろー",
+  "7": "ちー",
+  "8": "ぱー",
+  "9": "きゅー",
+  "0": "あか",
+};
+
+// スートのひらがな読み（チーの読み上げ用）
+const SUIT_TO_ARIA: Record<string, string> = {
+  "m": "まん",
+  "p": "ぴん",
+  "s": "そー",
+};
+
+export function getTileNumberAria(code: TileCode): string {
+  return NUMBER_TO_ARIA[code[0]] ?? code[0];
+}
+
+export function getTileSuitAria(code: TileCode): string {
+  return SUIT_TO_ARIA[code[1]] ?? "";
+}
+
 export function parseTile(input: string): TileCode | null {
   if (HONOR_MAP[input]) return HONOR_MAP[input];
   // r5m → 0m (赤牌)

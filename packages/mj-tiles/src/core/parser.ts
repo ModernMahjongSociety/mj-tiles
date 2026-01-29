@@ -31,6 +31,80 @@ const CODE_TO_LABEL: Record<string, string> = {
   "7z": "中",
 };
 
+// スクリーンリーダー用のひらがな読み上げラベル
+const CODE_TO_ARIA_LABEL: Record<string, string> = {
+  // 萬子
+  "1m": "いー まん",
+  "2m": "りゃん まん",
+  "3m": "さん まん",
+  "4m": "すー まん",
+  "5m": "うー まん",
+  "6m": "ろー まん",
+  "7m": "ちー まん",
+  "8m": "ぱー まん",
+  "9m": "きゅー まん",
+  "0m": "あか うー まん",
+  // 筒子
+  "1p": "いー ぴん",
+  "2p": "りゃん ぴん",
+  "3p": "さん ぴん",
+  "4p": "すー ぴん",
+  "5p": "うー ぴん",
+  "6p": "ろー ぴん",
+  "7p": "ちー ぴん",
+  "8p": "ぱー ぴん",
+  "9p": "きゅー ぴん",
+  "0p": "あか うー ぴん",
+  // 索子
+  "1s": "いー そー",
+  "2s": "りゃん そー",
+  "3s": "さん そー",
+  "4s": "すー そー",
+  "5s": "うー そー",
+  "6s": "ろー そー",
+  "7s": "ちー そー",
+  "8s": "ぱー そー",
+  "9s": "きゅー そー",
+  "0s": "あか うー そー",
+  // 字牌
+  "1z": "とん",
+  "2z": "なん",
+  "3z": "しゃー",
+  "4z": "ぺー",
+  "5z": "はく",
+  "6z": "はつ",
+  "7z": "ちゅん",
+};
+
+// 数字のひらがな読み（チーの読み上げ用）
+const NUMBER_TO_ARIA: Record<string, string> = {
+  "1": "いち",
+  "2": "に",
+  "3": "さん",
+  "4": "よん",
+  "5": "ご",
+  "6": "ろく",
+  "7": "なな",
+  "8": "はち",
+  "9": "きゅう",
+  "0": "あか",
+};
+
+// スートのひらがな読み（チーの読み上げ用）
+const SUIT_TO_ARIA: Record<string, string> = {
+  "m": "まん",
+  "p": "ぴん",
+  "s": "そー",
+};
+
+export function getTileNumberAria(code: TileCode): string {
+  return NUMBER_TO_ARIA[code[0]] ?? code[0];
+}
+
+export function getTileSuitAria(code: TileCode): string {
+  return SUIT_TO_ARIA[code[1]] ?? "";
+}
+
 export function parseTile(input: string): TileCode | null {
   if (HONOR_MAP[input]) return HONOR_MAP[input];
   // r5m → 0m (赤牌)
@@ -75,6 +149,14 @@ export function parseHand(input: string): TileCode[] {
 
 export function getTileLabel(code: TileCode): string {
   return CODE_TO_LABEL[code] ?? code;
+}
+
+export function getTileAriaLabel(code: TileCode): string {
+  return CODE_TO_ARIA_LABEL[code] ?? code;
+}
+
+export function getBackTileAriaLabel(): string {
+  return "えっくす";
 }
 
 // Phase 0: 正規化関数

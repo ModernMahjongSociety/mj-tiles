@@ -1,5 +1,5 @@
 import type { TileCode, RendererConfig, TileRenderer, TileState, MeldInfo, Hand } from "./types";
-import { parseTile, parseHand, parseHandExtended, getTileLabel } from "./parser";
+import { parseTile, parseHand, parseHandExtended, getTileLabel, getTileAriaLabel, getBackTileAriaLabel } from "./parser";
 
 export function createRenderer(config: RendererConfig): TileRenderer {
   const mode = config.mode ?? "inline";
@@ -37,9 +37,9 @@ export function createRenderer(config: RendererConfig): TileRenderer {
     if (mode === "url" && config.assets.getUrl) {
       const url = config.assets.getUrl(code);
       if (styling === "inline") {
-        return `<img style="${inlineStyles.tile}" src="${url}" alt="${label}" loading="lazy" />`;
+        return `<img style="${inlineStyles.tile}" src="${url}" alt="" loading="lazy" />`;
       }
-      return `<img class="${cls.tile}" src="${url}" alt="${label}" loading="lazy" />`;
+      return `<img class="${cls.tile}" src="${url}" alt="" loading="lazy" />`;
     }
 
     const svg = config.assets.getSvg(code);
@@ -48,9 +48,9 @@ export function createRenderer(config: RendererConfig): TileRenderer {
       if (config.assets.getUrl) {
         const url = config.assets.getUrl(code);
         if (styling === "inline") {
-          return `<img style="${inlineStyles.tile}" src="${url}" alt="${label}" loading="lazy" />`;
+          return `<img style="${inlineStyles.tile}" src="${url}" alt="" loading="lazy" />`;
         }
-        return `<img class="${cls.tile}" src="${url}" alt="${label}" loading="lazy" />`;
+        return `<img class="${cls.tile}" src="${url}" alt="" loading="lazy" />`;
       }
       // SVGもURLもない場合、エラー表示
       if (styling === "inline") {
@@ -62,14 +62,14 @@ export function createRenderer(config: RendererConfig): TileRenderer {
     if (styling === "inline") {
       const svgWithAttrs = svg.replace(
         "<svg",
-        `<svg aria-label="${label}" style="${inlineStyles.tile}"`,
+        `<svg aria-hidden="true" style="${inlineStyles.tile}"`,
       );
       return svgWithAttrs;
     }
 
     const svgWithAttrs = svg.replace(
       "<svg",
-      `<svg aria-label="${label}" class="${cls.tile}"`,
+      `<svg aria-hidden="true" class="${cls.tile}"`,
     );
     return svgWithAttrs;
   }
@@ -100,9 +100,9 @@ export function createRenderer(config: RendererConfig): TileRenderer {
       if (styling === "inline") {
         // 横向き画像を使用する場合、CSS rotateは不要
         const finalStyle = tile.isRotated ? inlineStyles.tile : styleStr;
-        return `<img style="${finalStyle}" src="${url}" alt="${label}" loading="lazy" />`;
+        return `<img style="${finalStyle}" src="${url}" alt="" loading="lazy" />`;
       }
-      return `<img class="${finalClasses.join(' ')}" src="${url}" alt="${label}" loading="lazy" />`;
+      return `<img class="${finalClasses.join(' ')}" src="${url}" alt="" loading="lazy" />`;
     }
 
     const svg = config.assets.getSvg(code as TileCode | 'back');
@@ -117,9 +117,9 @@ export function createRenderer(config: RendererConfig): TileRenderer {
         const finalStyle = tile.isRotated ? inlineStyles.tile : styleStr;
 
         if (styling === "inline") {
-          return `<img style="${finalStyle}" src="${url}" alt="${label}" loading="lazy" />`;
+          return `<img style="${finalStyle}" src="${url}" alt="" loading="lazy" />`;
         }
-        return `<img class="${finalClasses.join(' ')}" src="${url}" alt="${label}" loading="lazy" />`;
+        return `<img class="${finalClasses.join(' ')}" src="${url}" alt="" loading="lazy" />`;
       }
       // SVGもURLもない場合、エラー表示
       if (styling === "inline") {
@@ -131,14 +131,14 @@ export function createRenderer(config: RendererConfig): TileRenderer {
     if (styling === "inline") {
       const svgWithAttrs = svg.replace(
         "<svg",
-        `<svg aria-label="${label}" style="${styleStr}"`,
+        `<svg aria-hidden="true" style="${styleStr}"`,
       );
       return svgWithAttrs;
     }
 
     const svgWithAttrs = svg.replace(
       "<svg",
-      `<svg aria-label="${label}" class="${classes.join(' ')}"`,
+      `<svg aria-hidden="true" class="${classes.join(' ')}"`,
     );
     return svgWithAttrs;
   }
@@ -155,7 +155,7 @@ export function createRenderer(config: RendererConfig): TileRenderer {
   }
 
   // Phase 3: Hand全体をレンダリングする関数
-  function renderHandExtended(hand: Hand): string {
+  function renderHandExtended(hand: Hand, input: string): string {
     const concealedHtml = hand.concealed.length > 0
       ? (styling === "inline"
           ? `<span style="${inlineStyles.concealed}">${hand.concealed.map(renderTileState).join("")}</span>`
@@ -170,11 +170,18 @@ export function createRenderer(config: RendererConfig): TileRenderer {
 
     const parts = [concealedHtml, meldsHtml].filter(p => p.length > 0);
 
+    // ひらがな読み上げラベルを生成
+    const allTiles = [
+      ...hand.concealed.map(t => t.isFaceDown ? getBackTileAriaLabel() : getTileAriaLabel(t.code)),
+      ...hand.melds.flatMap(m => m.tiles.map(t => t.isFaceDown ? getBackTileAriaLabel() : getTileAriaLabel(t.code)))
+    ];
+    const ariaLabel = allTiles.join(" ");
+
     if (styling === "inline") {
-      return `<span style="${inlineStyles.hand}">${parts.join("")}</span>`;
+      return `<span style="${inlineStyles.hand}" role="img" alt="${input}" aria-label="${ariaLabel}">${parts.join("")}</span>`;
     }
 
-    return `<span class="${cls.hand}">${parts.join("")}</span>`;
+    return `<span class="${cls.hand}" role="img" alt="${input}" aria-label="${ariaLabel}">${parts.join("")}</span>`;
   }
 
   return {
@@ -192,16 +199,17 @@ export function createRenderer(config: RendererConfig): TileRenderer {
     hand(input: string): string {
       const codes = parseHand(input);
       const rendered = codes.map(renderTileCode).join("");
+      const ariaLabel = codes.map(getTileAriaLabel).join(" ");
       if (styling === "inline") {
-        return `<span style="${inlineStyles.tiles}">${rendered}</span>`;
+        return `<span style="${inlineStyles.tiles}" role="img" alt="${input}" aria-label="${ariaLabel}">${rendered}</span>`;
       }
-      return `<span class="${cls.tiles}">${rendered}</span>`;
+      return `<span class="${cls.tiles}" role="img" alt="${input}" aria-label="${ariaLabel}">${rendered}</span>`;
     },
 
     // Phase 3: 拡張記法対応の手牌レンダリング
     handExtended(input: string): string {
       const hand = parseHandExtended(input);
-      return renderHandExtended(hand);
+      return renderHandExtended(hand, input);
     },
   };
 }

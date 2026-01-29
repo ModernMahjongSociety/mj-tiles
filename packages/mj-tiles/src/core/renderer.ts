@@ -149,12 +149,12 @@ export function createRenderer(config: RendererConfig): TileRenderer {
 
     switch (meld.type) {
       case 'chii': {
-        // チー: 「{鳴いた牌}をチー {数字1} {数字2} {数字3} {スート}」
+        // チー: 「{鳴いた牌}をチーして {数字1} {数字2} {数字3} {スート}」
         const calledTile = meld.tiles[meld.calledTileIndex ?? 0];
         const calledLabel = getTileLabel(calledTile);
         const numbers = meld.tiles.map(t => getTileNumberAria(t.code)).join(" ");
         const suit = getTileSuitAria(meld.tiles[0].code);
-        return `${calledLabel}をチー ${numbers} ${suit}`;
+        return `${calledLabel}をチーして ${numbers} ${suit}`;
       }
       case 'pon': {
         // ポン: 「{鳴いた牌}をポン」

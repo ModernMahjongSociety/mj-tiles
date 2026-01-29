@@ -226,7 +226,7 @@ describe("createRenderer", () => {
     test("チーの読み上げ", () => {
       const renderer = createRenderer({ assets: mockAssets });
       const html = renderer.handExtended("1-23m");
-      expect(html).toContain("いー まんをチー いち りゃん さん まん");
+      expect(html).toContain("いー まんをチーして いち に さん まん");
     });
 
     test("ポンの読み上げ", () => {

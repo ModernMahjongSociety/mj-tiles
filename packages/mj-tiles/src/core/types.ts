@@ -42,7 +42,8 @@ export interface Hand {
 
 export interface TileAssets {
   getSvg: (code: TileCode | 'back') => string | null;
-  getUrl?: (code: TileCode | 'back', isRotated?: boolean) => string; // CSR向けURL参照（横向き対応）
+  // CSR向けURL参照（横向き対応）。該当する画像が無い場合は undefined を返す
+  getUrl?: (code: TileCode | 'back', isRotated?: boolean) => string | undefined;
 }
 
 export interface RendererConfig {

@@ -22,6 +22,7 @@ const PAIGA_HONOR_MAP: Record<string, string> = {
 };
 
 const CODE_TO_LABEL: Record<string, string> = {
+  back: "裏",
   "1z": "東",
   "2z": "南",
   "3z": "西",
@@ -30,6 +31,72 @@ const CODE_TO_LABEL: Record<string, string> = {
   "6z": "發",
   "7z": "中",
 };
+
+// 牌単体の読みに使う数字のひらがな（チーの読み上げに使う NUMBER_TO_ARIA とは別系統）
+const TILE_NUMBER_TO_ARIA: Record<string, string> = {
+  "1": "いー",
+  "2": "りゃん",
+  "3": "さん",
+  "4": "すー",
+  "5": "うー",
+  "6": "ろー",
+  "7": "ちー",
+  "8": "ぱー",
+  "9": "きゅー",
+  "0": "あか うー",
+};
+
+// スートのひらがな読み
+const SUIT_TO_ARIA: Record<string, string> = {
+  "m": "まん",
+  "p": "ぴん",
+  "s": "そー",
+};
+
+// 数字のひらがな読み（チーの読み上げ用）
+const NUMBER_TO_ARIA: Record<string, string> = {
+  "1": "いち",
+  "2": "に",
+  "3": "さん",
+  "4": "よん",
+  "5": "ご",
+  "6": "ろく",
+  "7": "なな",
+  "8": "はち",
+  "9": "きゅう",
+  "0": "あか ご",
+};
+
+// スクリーンリーダー用のひらがな読み上げラベル
+const CODE_TO_ARIA_LABEL: Record<string, string> = {
+  // 数牌はスートごとに同じ規則で読むため、表を持たずに組み立てる
+  ...Object.fromEntries(
+    Object.entries(SUIT_TO_ARIA).flatMap(([suit, suitAria]) =>
+      Object.entries(TILE_NUMBER_TO_ARIA).map(([number, numberAria]) => [
+        `${number}${suit}`,
+        `${numberAria} ${suitAria}`,
+      ]),
+    ),
+  ),
+  // 字牌
+  "1z": "とん",
+  "2z": "なん",
+  "3z": "しゃー",
+  "4z": "ぺー",
+  "5z": "はく",
+  "6z": "はつ",
+  "7z": "ちゅん",
+  // 伏せ牌
+  back: "えっくす",
+};
+
+export function getTileNumberAria(code: TileCode): string {
+  return NUMBER_TO_ARIA[code[0]] ?? code[0];
+}
+
+export function getTileSuitAria(code: TileCode): string {
+  return SUIT_TO_ARIA[code[1]] ?? "";
+}
 
 export function parseTile(input: string): TileCode | null {
   if (HONOR_MAP[input]) return HONOR_MAP[input];
@@ -73,8 +140,12 @@ export function parseHand(input: string): TileCode[] {
   return tiles;
 }
 
-export function getTileLabel(code: TileCode): string {
+export function getTileLabel(code: TileCode | 'back'): string {
   return CODE_TO_LABEL[code] ?? code;
+}
+
+export function getTileAriaLabel(code: TileCode | 'back'): string {
+  return CODE_TO_ARIA_LABEL[code] ?? code;
 }
 
 // Phase 0: 正規化関数
@@ -275,6 +346,11 @@ function parseArasinoMeld(input: string): MeldInfo {
     });
   }
 
+  // この先は記号の位置から牌を特定するため、牌が無い記法はここで弾く
+  if (tiles.length === 0) {
+    throw new Error(`Invalid meld notation: ${input}`);
+  }
+
   // 副露タイプと方向を判定
   if (plusPos >= 0) {
     // 暗槓
@@ -339,7 +415,8 @@ function parseArasinoMeld(input: string): MeldInfo {
 // 牌画作成くん方式の副露をパース
 function parsePaigaMeld(input: string): MeldInfo {
   const tiles: TileState[] = [];
-  let rotatedIndex = -1;
+  let rotatedIndex = -1;  // 横向きになった牌の位置
+  let tilesBeforeY = -1;  // `y` 記号の前にあった牌数（鳴きの方向の判定に使う）
   let i = 0;
 
   // 特殊パターン: o[数字]+[スート]o または o[数字]+o[スート]（暗槓）
@@ -354,28 +431,33 @@ function parsePaigaMeld(input: string): MeldInfo {
     const nums = ankanMatch[1].split('');
     const suit = ankanMatch[2];
 
-    // 暗槓は4枚なので、見える牌（nums）から4枚を生成
-    // o33so の場合: [3s(伏), 3s, 3s, 3s(伏)]
-    // o550om の場合: [5m(伏), 5m, 5m, 0m(伏)]
+    const uniqueFaces = [...new Set(nums)];
 
-    // 最初の牌を伏せ牌として追加
-    tiles.push({
-      code: `${nums[0]}${suit}` as TileCode,
-      isFaceDown: true,
-    });
-
-    // 中間の牌を通常の牌として追加（見える牌）
-    for (const num of nums) {
-      tiles.push({
-        code: `${num}${suit}` as TileCode,
-      });
+    // 暗槓は同じ牌4枚。種類が分かれるのは数牌の赤五（0）と通常の五だけで、
+    // 他の組み合わせや5枚以上は暗槓として成立しないので、補完を試みず弾く
+    const isRedFivePair = suit !== 'z'
+      && uniqueFaces.length === 2
+      && uniqueFaces.every(num => num === '5' || num === '0');
+    if (nums.length > 4 || (uniqueFaces.length > 1 && !isRedFivePair)) {
+      throw new Error(`Invalid ankan notation: ${input}`);
     }
 
-    // 最後の牌を伏せ牌として追加
-    tiles.push({
-      code: `${nums[nums.length - 1]}${suit}` as TileCode,
-      isFaceDown: true,
-    });
+    // 出典の o33so は見える2枚だけを書く形式なので、両端を伏せ牌で補う。
+    // 見える2枚は書かれた牌の種類から取る
+    // （重複を先に除かないと赤五が伏せ牌側へ押し出される）。
+    // o1111so のように4枚書かれた場合はそのまま使う
+    const [firstVisible, secondVisible = firstVisible] = uniqueFaces.slice(-2);
+    const faces = nums.length === 4
+      ? nums
+      : [nums[0], firstVisible, secondVisible, nums[nums.length - 1]];
+
+    // 両端が伏せ牌
+    for (const [index, num] of faces.entries()) {
+      tiles.push({
+        code: `${num}${suit}` as TileCode,
+        ...(index === 0 || index === faces.length - 1 ? { isFaceDown: true } : {}),
+      });
+    }
 
     return {
       type: 'ankan',
@@ -415,14 +497,25 @@ function parsePaigaMeld(input: string): MeldInfo {
       }
     } else if (char === 'y') {
       // 横向き（次の1文字が数字）
-      rotatedIndex = tiles.length;
+      tilesBeforeY = tiles.length;
       i++;
       if (i < input.length && /[0-9]/.test(input[i])) {
+        rotatedIndex = tiles.length;
         tiles.push({
           code: `${input[i]}${suit}` as TileCode,
           isRotated: true,
         });
         i++;
+      } else if (
+        tiles.length > 0
+        && !tiles[tiles.length - 1].isFaceDown
+        && /^[mpsz]*$/.test(input.slice(i))
+      ) {
+        // 555yp のように記号が末尾（スートの直前）にある場合だけ、直前の牌を横向きとして扱う。
+        // 途中に置かれた対象の無い `y`（55yo5p など）は後続の牌を巻き込まないよう無視する。
+        // 伏せ牌は表を見せないので横向きの対象にしない（55o5yp が伏せ牌を鳴き牌にしてしまう）
+        rotatedIndex = tiles.length - 1;
+        tiles[rotatedIndex].isRotated = true;
       }
     } else if (/[0-9]/.test(char)) {
       // 通常の牌
@@ -444,12 +537,16 @@ function parsePaigaMeld(input: string): MeldInfo {
   }
 
   // 横向き牌があれば副露
-  if (rotatedIndex >= 0) {
+  if (tilesBeforeY >= 0) {
+    // この先は記号の位置から牌を特定するため、牌が無い記法はここで弾く
+    if (tiles.length === 0) {
+      throw new Error(`Invalid paiga meld notation: ${input}`);
+    }
+
     // 牌画作成くん方式では、記号の前にある牌の数で方向を判定
     // 5y55p: 記号の前に1枚 → kamicha
     // 55y5p: 記号の前に2枚 → toimen
     // 555yp: 記号の前に3枚 → shimocha
-    const tilesBeforeY = rotatedIndex;
     const from: MeldFrom =
       tilesBeforeY === 1 ? 'kamicha' :
       tilesBeforeY === 2 ? 'toimen' :
@@ -464,7 +561,8 @@ function parsePaigaMeld(input: string): MeldInfo {
       type,
       tiles,
       from,
-      calledTileIndex: rotatedIndex,
+      // `y` の対象が特定できない壊れた記法では先頭牌を鳴いた牌として扱う
+      calledTileIndex: rotatedIndex >= 0 ? rotatedIndex : 0,
     };
   }
 

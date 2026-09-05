@@ -5,13 +5,10 @@ import type { TileAssets, TileCode } from "../core/types";
 export const defaultAssets: TileAssets = {
   getSvg: () => null,  // SVGは廃止（後方互換性のため残す）
   getUrl: (code: TileCode | 'back', isRotated?: boolean) => {
-    // 裏面は常に通常版を使用
-    if (code === 'back') {
-      return tiles[code];
-    }
-    // 横向き画像がある場合はそれを使用、なければ通常版
-    if (isRotated && tilesRotated[code]) {
-      return tilesRotated[code];
+    // 横向き専用の画像が無い牌（裏面など）は undefined を返し、
+    // 呼び出し側にCSSでの回転を任せる。通常版を返すと回転済みと誤認される
+    if (isRotated) {
+      return code === 'back' ? undefined : tilesRotated[code];
     }
     return tiles[code];
   },

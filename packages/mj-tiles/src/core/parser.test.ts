@@ -210,6 +210,31 @@ describe("parseHandExtended - 牌画作成くん方式", () => {
     expect(result.melds[0].tiles[2].isRotated).toBe(true);  // 3枚目が横向き
   });
 
+  test("横向き記号は牌ごとの修飾子なので複数指定できる", () => {
+    const result = parseHandExtended("5y5y5p");
+    expect(result.melds[0].tiles.map(t => t.isRotated ?? false)).toEqual([false, true, true]);
+  });
+
+  test("対象の無い横向き記号は後続の牌を巻き込まない", () => {
+    const result = parseHandExtended("55yo5p");
+    expect(result.melds[0].tiles.map(t => t.isRotated ?? false)).toEqual([false, false, false]);
+    expect(result.melds[0].tiles[2].isFaceDown).toBe(true);
+  });
+
+  test("牌が1枚も無い副露記法はエラーになる", () => {
+    expect(() => parseHandExtended("-m")).toThrow("Invalid meld notation");
+    expect(() => parseHandExtended("+m")).toThrow("Invalid meld notation");
+    expect(() => parseHandExtended("yp")).toThrow("Invalid paiga meld notation");
+  });
+
+  test("横向き記号が末尾にある場合は直前の牌が横向き", () => {
+    const result = parseHandExtended("555yp");
+    expect(result.melds[0].type).toBe("pon");
+    expect(result.melds[0].from).toBe("shimocha");  // 記号が3枚目の後 → 下家
+    expect(result.melds[0].tiles[2].isRotated).toBe(true);
+    expect(result.melds[0].calledTileIndex).toBe(2);
+  });
+
   test("赤ドラ修飾子", () => {
     const result = parseHandExtended("a5m 23m");
     expect(result.concealed[0].code).toBe("0m");
@@ -222,6 +247,45 @@ describe("parseHandExtended - 牌画作成くん方式", () => {
     expect(result.melds[0].type).toBe("ankan");
     expect(result.melds[0].tiles[0].isFaceDown).toBe(true);
     expect(result.melds[0].tiles[3].isFaceDown).toBe(true);
+  });
+
+  test("暗槓は記法の桁数によらず4枚", () => {
+    // ドキュメントの o1111so 形式（4桁）でも枚数が増えない
+    const result = parseHandExtended("o1111so");
+    expect(result.melds[0].type).toBe("ankan");
+    expect(result.melds[0].tiles).toHaveLength(4);
+    expect(result.melds[0].tiles[0].isFaceDown).toBe(true);
+    expect(result.melds[0].tiles[3].isFaceDown).toBe(true);
+    expect(result.melds[0].tiles[1].isFaceDown).toBeUndefined();
+  });
+
+  test("暗槓として成立しない記法はエラーになる", () => {
+    // 種類が分かれてよいのは数牌の赤五と通常の五だけ
+    expect(() => parseHandExtended("o123so")).toThrow("Invalid ankan notation");
+    expect(() => parseHandExtended("o12so")).toThrow("Invalid ankan notation");
+    expect(() => parseHandExtended("o54om")).toThrow("Invalid ankan notation");
+    // 字牌に赤五は無い
+    expect(() => parseHandExtended("o550oz")).toThrow("Invalid ankan notation");
+    // 暗槓は4枚を超えない
+    expect(() => parseHandExtended("o11111so")).toThrow("Invalid ankan notation");
+    // 出典の形は成立する
+    for (const notation of ["o33so", "o550om", "o055om", "o1111so"]) {
+      expect(() => parseHandExtended(notation)).not.toThrow();
+    }
+  });
+
+  test("暗槓省略形は赤五を書いた位置によらず表向きに残す", () => {
+    for (const notation of ["o550om", "o055om"]) {
+      const tiles = parseHandExtended(notation).melds[0].tiles;
+      expect(tiles.some(t => t.code === "0m" && !t.isFaceDown)).toBe(true);
+    }
+  });
+
+  test("末尾のyは伏せ牌を横向きにしない", () => {
+    // 55o5yp の直前の牌は伏せ牌なので、鳴き牌として横向きにはしない
+    const result = parseHandExtended("55o5yp");
+    expect(result.melds[0].tiles[2].isFaceDown).toBe(true);
+    expect(result.melds[0].tiles.some(t => t.isRotated)).toBe(false);
   });
 
   test("字牌独自記号", () => {
@@ -522,9 +586,12 @@ describe("牌画作成くん方式の赤ドラ", () => {
     // o550om = 赤5入りの暗槓
     const result = parseHandExtended("o550om");
     expect(result.melds[0].type).toBe("ankan");
-    expect(result.melds[0].tiles.map(t => t.code)).toContain("0m");
+    expect(result.melds[0].tiles).toHaveLength(4);
+    // 赤五は表向きに残らないと得点が伝わらない
+    expect(result.melds[0].tiles[2].code).toBe("0m");
+    expect(result.melds[0].tiles[2].isFaceDown).toBeUndefined();
     expect(result.melds[0].tiles[0].isFaceDown).toBe(true);
-    expect(result.melds[0].tiles[4].isFaceDown).toBe(true);
+    expect(result.melds[0].tiles[3].isFaceDown).toBe(true);
   });
 });
 

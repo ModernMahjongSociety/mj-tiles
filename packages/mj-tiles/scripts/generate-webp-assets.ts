@@ -22,7 +22,8 @@ const ALL_TILECODES = [
 
 async function generateAssets() {
   try {
-    const files = await readdir(TILES_IMAGES_DIR);
+    // readdir の順序はファイルシステム依存で、そのままだと生成物の並びが環境ごとに変わる
+    const files = (await readdir(TILES_IMAGES_DIR)).sort();
     const webpFiles = files.filter(f => f.endsWith(".webp"));
 
     const tiles: Record<string, string> = {};

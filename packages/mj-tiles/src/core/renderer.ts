@@ -1,5 +1,20 @@
 import type { TileCode, RendererConfig, TileRenderer, TileState, MeldInfo, Hand } from "./types";
-import { parseTile, parseHand, parseHandExtended, getTileLabel } from "./parser";
+import { parseTile, parseHand, parseHandExtended, getTileLabel, getTileAriaLabel, getTileNumberAria, getTileSuitAria } from "./parser";
+
+// 記法文字列は利用者入力がそのままHTMLに出るため、埋め込む前にエスケープする
+function escapeHtml(text: string): string {
+  return text
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+}
+
+// 1枚の牌をどう見せるか。アセットの解決結果を保持して、描画と読み上げラベルで使い回す
+type TileVisual =
+  | { kind: "image"; url: string; isPreRotated: boolean }
+  | { kind: "svg"; markup: string }
+  | { kind: "error"; label: string };
 
 export function createRenderer(config: RendererConfig): TileRenderer {
   const mode = config.mode ?? "inline";
@@ -31,177 +46,199 @@ export function createRenderer(config: RendererConfig): TileRenderer {
     faceDown: "",
   };
 
-  function renderTileCode(code: TileCode): string {
-    const label = getTileLabel(code);
+  type WrapperKey = keyof typeof cls;
 
-    if (mode === "url" && config.assets.getUrl) {
-      const url = config.assets.getUrl(code);
-      if (styling === "inline") {
-        return `<img style="${inlineStyles.tile}" src="${url}" alt="${label}" loading="lazy" />`;
-      }
-      return `<img class="${cls.tile}" src="${url}" alt="${label}" loading="lazy" />`;
-    }
-
-    const svg = config.assets.getSvg(code);
-    if (!svg) {
-      // SVGがない場合、getUrlにフォールバック
-      if (config.assets.getUrl) {
-        const url = config.assets.getUrl(code);
-        if (styling === "inline") {
-          return `<img style="${inlineStyles.tile}" src="${url}" alt="${label}" loading="lazy" />`;
-        }
-        return `<img class="${cls.tile}" src="${url}" alt="${label}" loading="lazy" />`;
-      }
-      // SVGもURLもない場合、エラー表示
-      if (styling === "inline") {
-        return `<span style="${inlineStyles.error}">[${label}]</span>`;
-      }
-      return `<span class="${cls.error}">[${label}]</span>`;
-    }
-
-    if (styling === "inline") {
-      const svgWithAttrs = svg.replace(
-        "<svg",
-        `<svg aria-label="${label}" style="${inlineStyles.tile}"`,
-      );
-      return svgWithAttrs;
-    }
-
-    const svgWithAttrs = svg.replace(
-      "<svg",
-      `<svg aria-label="${label}" class="${cls.tile}"`,
-    );
-    return svgWithAttrs;
+  // styling によってラッパーの見た目指定が class と style に分かれる分岐をここに閉じ込める
+  function wrapSpan(
+    key: WrapperKey,
+    content: string,
+    options: { extraClass?: string; attributes?: string } = {},
+  ): string {
+    const presentation = styling === "inline"
+      ? `style="${inlineStyles[key]}"`
+      : `class="${[cls[key], options.extraClass].filter(Boolean).join(" ")}"`;
+    return `<span ${presentation}${options.attributes ?? ""}>${content}</span>`;
   }
 
-  // Phase 3: TileStateをレンダリングする関数
-  function renderTileState(tile: TileState): string {
-    const code = tile.isFaceDown ? 'back' : tile.code;
-    const label = tile.isFaceDown ? '裏' : getTileLabel(tile.code);
+  // 画面のエラー表示と読み上げで同じ文字列を使うため、書式はここだけで決める
+  function errorLabel(text: string): string {
+    return `[${text}]`;
+  }
 
-    // CSSクラスを組み立て
-    const classes: string[] = [cls.tile];
-    if (tile.isRotated) classes.push(cls.rotated);
+  // 描画できない牌をHTMLに出す唯一の場所。エスケープはHTMLに出す時点で行う
+  function renderError(label: string): string {
+    return wrapSpan("error", escapeHtml(label));
+  }
+
+  function tileStateCode(tile: TileState): TileCode | 'back' {
+    return tile.isFaceDown ? 'back' : tile.code;
+  }
+
+  // アセットの解決は getSvg / getUrl の呼び出しを伴うため、1枚につき1回ずつに抑える。
+  // mode で優先順位が変わるだけで、試す手段と打ち切り方は同じ。
+  // 8z のように実在しない牌はどちらも返らないので、ここでエラー表示に落ちる
+  function resolveTileVisual(tile: TileState): TileVisual {
+    const code = tileStateCode(tile);
+
+    const resolveSvg = (): TileVisual | null => {
+      const svg = config.assets.getSvg(code);
+      return svg ? { kind: "svg", markup: svg } : null;
+    };
+    const resolveUrl = (): TileVisual | null => {
+      // 横向き専用の画像が無いアセットもあるため、無ければ通常の画像をCSSで回して使う
+      if (tile.isRotated) {
+        const rotatedUrl = config.assets.getUrl?.(code, true);
+        if (rotatedUrl) return { kind: "image", url: rotatedUrl, isPreRotated: true };
+      }
+      const url = config.assets.getUrl?.(code);
+      return url ? { kind: "image", url, isPreRotated: false } : null;
+    };
+
+    const visual = mode === "url" ? resolveUrl() ?? resolveSvg() : resolveSvg() ?? resolveUrl();
+    if (visual) return visual;
+
+    return { kind: "error", label: errorLabel(getTileLabel(code)) };
+  }
+
+  // ariaLabel を渡さない牌は、まとまりの aria-label で読まれるため読み上げから隠す
+  function renderTileVisual(visual: TileVisual, tile: TileState, ariaLabel?: string): string {
+    if (visual.kind === "error") return renderError(visual.label);
+
+    // 回転済みの画像が使えたときだけCSSでの回転が不要になる
+    const rotateWithCss = tile.isRotated === true && (visual.kind === "svg" || !visual.isPreRotated);
+    const classes = [cls.tile];
+    if (rotateWithCss) classes.push(cls.rotated);
     if (tile.isFaceDown) classes.push(cls.faceDown);
+    const presentation = styling === "inline"
+      ? `style="${rotateWithCss ? `${inlineStyles.tile};${inlineStyles.rotated}` : inlineStyles.tile}"`
+      : `class="${classes.join(' ')}"`;
 
-    // インラインスタイルを組み立て
-    let styleStr = inlineStyles.tile;
-    if (tile.isRotated) {
-      styleStr += `;${inlineStyles.rotated}`;
+    if (visual.kind === "image") {
+      return `<img ${presentation} src="${visual.url}" alt="${ariaLabel ?? ""}" loading="lazy" />`;
     }
 
-    if (mode === "url" && config.assets.getUrl) {
-      const url = config.assets.getUrl(code as TileCode | 'back', tile.isRotated);
-      // 横向き画像を使用する場合、CSSのrotatedクラスは不要
-      const finalClasses = tile.isRotated
-        ? [cls.tile, tile.isFaceDown ? cls.faceDown : ''].filter(Boolean)
-        : classes;
+    const accessibility = ariaLabel === undefined
+      ? 'aria-hidden="true"'
+      : `role="img" aria-label="${ariaLabel}"`;
+    return visual.markup.replace("<svg", `<svg ${accessibility} ${presentation}`);
+  }
 
-      if (styling === "inline") {
-        // 横向き画像を使用する場合、CSS rotateは不要
-        const finalStyle = tile.isRotated ? inlineStyles.tile : styleStr;
-        return `<img style="${finalStyle}" src="${url}" alt="${label}" loading="lazy" />`;
+  // 牌の並びをHTMLと読み上げラベルに変換する。
+  // まとまりに aria-label を付けると子要素は読み上げから外れるため、
+  // 描画できなかった牌は画面に出るエラー表示と同じ文字列をラベルに含める
+  function renderTileSequence(tiles: TileState[]): {
+    html: string;
+    labels: string[];
+    allRendered: boolean;
+  } {
+    const visuals = tiles.map(resolveTileVisual);
+    return {
+      html: visuals.map((visual, index) => renderTileVisual(visual, tiles[index])).join(""),
+      labels: visuals.map((visual, index) =>
+        visual.kind === "error" ? visual.label : getTileAriaLabel(tileStateCode(tiles[index])),
+      ),
+      allRendered: visuals.every(visual => visual.kind !== "error"),
+    };
+  }
+
+  // 名前のない role="img" は accname 違反になるため、ラベルが空なら属性ごと省く
+  function groupAccessibility(ariaLabel: string): string {
+    return ariaLabel === "" ? "" : ` role="img" aria-label="${ariaLabel}"`;
+  }
+
+  // 副露のaria-labelを生成する関数
+  function getMeldAriaLabel(meld: MeldInfo): string {
+    // MeldInfo は公開型なので、パーサ以外が組み立てた欠けた面子も受け取りうる
+    const calledTile = meld.tiles[meld.calledTileIndex ?? 0];
+    if (!calledTile) return "";
+    const calledLabel = getTileAriaLabel(tileStateCode(calledTile));
+
+    switch (meld.type) {
+      case 'chii': {
+        // 伏せ牌は数字を読まない。スートも表向きの牌から取る
+        const numbers = meld.tiles
+          .map(t => (t.isFaceDown ? getTileAriaLabel('back') : getTileNumberAria(t.code)))
+          .join(" ");
+        // 表向きの牌が1枚も無ければスートも伏せられている扱いにする
+        const suitSource = meld.tiles.find(t => !t.isFaceDown);
+        const suit = suitSource ? ` ${getTileSuitAria(suitSource.code)}` : "";
+        return `${calledLabel}をチーして ${numbers}${suit}`;
       }
-      return `<img class="${finalClasses.join(' ')}" src="${url}" alt="${label}" loading="lazy" />`;
-    }
-
-    const svg = config.assets.getSvg(code as TileCode | 'back');
-    if (!svg) {
-      // SVGがない場合、getUrlにフォールバック
-      if (config.assets.getUrl) {
-        const url = config.assets.getUrl(code as TileCode | 'back', tile.isRotated);
-        // 横向き画像を使用する場合、CSSのrotatedクラスは不要
-        const finalClasses = tile.isRotated
-          ? [cls.tile, tile.isFaceDown ? cls.faceDown : ''].filter(Boolean)
-          : classes;
-        const finalStyle = tile.isRotated ? inlineStyles.tile : styleStr;
-
-        if (styling === "inline") {
-          return `<img style="${finalStyle}" src="${url}" alt="${label}" loading="lazy" />`;
-        }
-        return `<img class="${finalClasses.join(' ')}" src="${url}" alt="${label}" loading="lazy" />`;
+      case 'pon':
+        return `${calledLabel}をポン`;
+      case 'daiminkan':
+        return `みんかん ${calledLabel}`;
+      case 'kakan':
+        return `かかん ${calledLabel}`;
+      case 'ankan': {
+        // 暗槓には鳴いた牌が無いので、見えている牌から代表を選ぶ。
+        // 赤五が見えていれば得点に関わるため、それを優先して読む
+        const faceUpTiles = meld.tiles.filter(t => !t.isFaceDown);
+        const visibleTile =
+          faceUpTiles.find(t => t.code.startsWith('0')) ?? faceUpTiles[0] ?? calledTile;
+        return `あんかん ${getTileAriaLabel(tileStateCode(visibleTile))}`;
       }
-      // SVGもURLもない場合、エラー表示
-      if (styling === "inline") {
-        return `<span style="${inlineStyles.error}">[${label}]</span>`;
+      default: {
+        // MeldTypeを増やしたときに読み上げの追従漏れをコンパイルエラーにする
+        const unhandled: never = meld.type;
+        return unhandled;
       }
-      return `<span class="${cls.error}">[${label}]</span>`;
     }
-
-    if (styling === "inline") {
-      const svgWithAttrs = svg.replace(
-        "<svg",
-        `<svg aria-label="${label}" style="${styleStr}"`,
-      );
-      return svgWithAttrs;
-    }
-
-    const svgWithAttrs = svg.replace(
-      "<svg",
-      `<svg aria-label="${label}" class="${classes.join(' ')}"`,
-    );
-    return svgWithAttrs;
   }
 
   // Phase 3: MeldInfoをレンダリングする関数
-  function renderMeld(meld: MeldInfo): string {
-    const tilesHtml = meld.tiles.map(renderTileState).join("");
-
-    if (styling === "inline") {
-      return `<span style="${inlineStyles.meld}" data-meld-type="${meld.type}">${tilesHtml}</span>`;
-    }
-
-    return `<span class="${cls.meld} mj-meld-${meld.type}">${tilesHtml}</span>`;
+  function renderMeld(meld: MeldInfo): { html: string; label: string } {
+    const { html, labels, allRendered } = renderTileSequence(meld.tiles);
+    return {
+      html: wrapSpan("meld", html, {
+        extraClass: `mj-meld-${meld.type}`,
+        attributes: styling === "inline" ? ` data-meld-type="${meld.type}"` : "",
+      }),
+      // 描画できない牌があると鳴きの形が伝わらないため、牌ごとの読みに切り替える
+      label: allRendered ? getMeldAriaLabel(meld) : labels.join(" "),
+    };
   }
 
   // Phase 3: Hand全体をレンダリングする関数
   function renderHandExtended(hand: Hand): string {
-    const concealedHtml = hand.concealed.length > 0
-      ? (styling === "inline"
-          ? `<span style="${inlineStyles.concealed}">${hand.concealed.map(renderTileState).join("")}</span>`
-          : `<span class="${cls.concealed}">${hand.concealed.map(renderTileState).join("")}</span>`)
-      : "";
+    const concealed = renderTileSequence(hand.concealed);
+    const melds = hand.melds.map(renderMeld);
 
-    const meldsHtml = hand.melds.length > 0
-      ? (styling === "inline"
-          ? `<span style="${inlineStyles.melds}">${hand.melds.map(renderMeld).join("")}</span>`
-          : `<span class="${cls.melds}">${hand.melds.map(renderMeld).join("")}</span>`)
-      : "";
+    const parts = [
+      hand.concealed.length > 0 ? wrapSpan("concealed", concealed.html) : "",
+      melds.length > 0 ? wrapSpan("melds", melds.map(meld => meld.html).join("")) : "",
+    ].filter(part => part.length > 0);
 
-    const parts = [concealedHtml, meldsHtml].filter(p => p.length > 0);
+    const ariaLabel = [...concealed.labels, ...melds.map(meld => meld.label)]
+      .filter(label => label !== "")
+      .join(" ");
 
-    if (styling === "inline") {
-      return `<span style="${inlineStyles.hand}">${parts.join("")}</span>`;
-    }
-
-    return `<span class="${cls.hand}">${parts.join("")}</span>`;
+    return wrapSpan("hand", parts.join(""), { attributes: groupAccessibility(ariaLabel) });
   }
 
   return {
     tile(input: string): string {
       const code = parseTile(input);
-      if (!code) {
-        if (styling === "inline") {
-          return `<span style="${inlineStyles.error}">[${input}]</span>`;
-        }
-        return `<span class="${cls.error}">[${input}]</span>`;
-      }
-      return renderTileCode(code);
+      if (!code) return renderError(errorLabel(input));
+
+      const tile: TileState = { code };
+      return renderTileVisual(resolveTileVisual(tile), tile, getTileAriaLabel(code));
     },
 
     hand(input: string): string {
-      const codes = parseHand(input);
-      const rendered = codes.map(renderTileCode).join("");
-      if (styling === "inline") {
-        return `<span style="${inlineStyles.tiles}">${rendered}</span>`;
-      }
-      return `<span class="${cls.tiles}">${rendered}</span>`;
+      const { html, labels } = renderTileSequence(parseHand(input).map(code => ({ code })));
+      return wrapSpan("tiles", html, { attributes: groupAccessibility(labels.join(" ")) });
     },
 
     // Phase 3: 拡張記法対応の手牌レンダリング
     handExtended(input: string): string {
-      const hand = parseHandExtended(input);
-      return renderHandExtended(hand);
+      try {
+        return renderHandExtended(parseHandExtended(input));
+      } catch {
+        // 各フレームワークのラッパーは例外を捕まえないので、記法エラーで
+        // ページ全体を落とさず tile() と同じエラー表示に落とす
+        return renderError(errorLabel(input));
+      }
     },
   };
 }

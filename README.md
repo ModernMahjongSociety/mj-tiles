@@ -89,7 +89,7 @@ import 'mj-tiles/styles.css'
 
 各フレームワークでの実装例：
 
-- [Astro](./apps/astro/) - .astro + MDX + React/Preact/Solid islands
+- [Astro](./apps/astro/) - .astro + MDX + React/Preact/Solid islands（`/` は公式サイト兼ドキュメント）
 - [Hono](./apps/hono/) - Hono JSXでのSSRサーバー
 - [Next.js](./apps/next/) - Next.js App Router + MDX
 - [React](./apps/react/) - React + Vite（TSX + MDX）

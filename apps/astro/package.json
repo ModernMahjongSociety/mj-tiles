@@ -5,6 +5,7 @@
   "scripts": {
     "dev": "astro dev",
     "build": "astro build",
+    "test": "bun test src/components",
     "validate": "bun test src/validate.test.ts"
   },
   "dependencies": {

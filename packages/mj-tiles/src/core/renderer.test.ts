@@ -1,6 +1,6 @@
 import { describe, test, expect } from "bun:test";
 import { createRenderer } from "./renderer";
-import type { TileAssets } from "./types";
+import type { TileAssets, TileCode } from "./types";
 
 const mockAssets: TileAssets = {
   getSvg: (code) => `<svg>${code}</svg>`,
@@ -76,7 +76,7 @@ describe("createRenderer", () => {
       });
       const html = renderer.tile("1m");
       expect(html).toContain(
-        '<svg role="img" aria-label="いー まん" style="display:inline-block;height:1.5em;width:auto;vertical-align:-0.3em">',
+        '<svg role="img" aria-label="いー まん" style="display:inline-block;height:1.5em;width:auto;aspect-ratio:var(--mj-tile-aspect, 66 / 90);object-fit:contain;vertical-align:-0.3em">',
       );
       expect(html).not.toContain('class="mj-tile"');
     });
@@ -131,7 +131,7 @@ describe("createRenderer", () => {
       });
       const html = renderer.tile("1m");
       expect(html).toContain(
-        '<img style="display:inline-block;height:1.5em;width:auto;vertical-align:-0.3em"',
+        '<img style="display:inline-block;height:1.5em;width:auto;aspect-ratio:var(--mj-tile-aspect, 66 / 90);object-fit:contain;vertical-align:-0.3em"',
       );
       expect(html).toContain('src="/tiles/1m.svg"');
       expect(html).toContain('alt="いー まん"');
@@ -215,6 +215,67 @@ describe("createRenderer", () => {
       expect(html).toContain('<img class="mj-tile mj-tile-rotated" src="/tiles/5p.webp"');
       expect(html).not.toContain("mj-tile-error");
       expect(html).toContain('aria-label="うー ぴんをポン"');
+    });
+
+    test("実寸が分かるアセットでは img に width/height を出す", () => {
+      const renderer = createRenderer({
+        assets: {
+          getSvg: () => null,
+          getUrl: (code) => `/tiles/${code}.webp`,
+          getSize: () => ({ width: 66, height: 90 }),
+        },
+        mode: "url",
+      });
+      expect(renderer.tile("1m")).toContain('width="66" height="90"');
+    });
+
+    test("横向き牌には実際に使う画像の実寸を出す", () => {
+      const assets: TileAssets = {
+        getSvg: () => null,
+        getUrl: (code: TileCode | 'back', isRotated?: boolean) =>
+          isRotated ? `/tiles/${code}-rotated.webp` : `/tiles/${code}.webp`,
+        getSize: (_code: TileCode | 'back', isRotated?: boolean) =>
+          isRotated ? { width: 90, height: 66 } : { width: 66, height: 90 },
+      };
+      const html = createRenderer({ assets, mode: "url" }).handExtended("5y55p");
+      expect(html).toContain('src="/tiles/5p-rotated.webp" width="90" height="66"');
+      expect(html).toContain('src="/tiles/5p.webp" width="66" height="90"');
+    });
+
+    test("横向き画像が無ければCSS回転前の実寸を出す", () => {
+      const assets: TileAssets = {
+        getSvg: () => null,
+        getUrl: (code: TileCode | 'back', isRotated?: boolean) =>
+          isRotated ? undefined : `/tiles/${code}.webp`,
+        getSize: (_code: TileCode | 'back', isRotated?: boolean) =>
+          isRotated ? { width: 90, height: 66 } : { width: 66, height: 90 },
+      };
+      const html = createRenderer({ assets, mode: "url" }).handExtended("5y55p");
+      expect(html).toContain('class="mj-tile mj-tile-rotated" src="/tiles/5p.webp" width="66" height="90"');
+    });
+
+    test("実寸が分からないアセットでは width/height を出さない", () => {
+      const renderer = createRenderer({
+        assets: { getSvg: () => null, getUrl: (code) => `/tiles/${code}.webp` },
+        mode: "url",
+      });
+      expect(renderer.tile("1m")).not.toContain("width=");
+    });
+
+    test("回転済み画像の横向き牌は立て牌と同じ寸法にならない", () => {
+      const assets = {
+        getSvg: () => null,
+        getUrl: (code: TileCode | 'back', isRotated?: boolean) =>
+          isRotated ? `/tiles/${code}-rotated.webp` : `/tiles/${code}.webp`,
+      };
+      const html = createRenderer({ assets, mode: "url" }).handExtended("5y55p");
+      expect(html).toContain('class="mj-tile mj-tile-rotated-image" src="/tiles/5p-rotated.webp"');
+      // 回転済み画像はCSSで回さない
+      expect(html).not.toContain("mj-tile-rotated ");
+
+      const inlineHtml = createRenderer({ assets, mode: "url", styling: "inline" }).handExtended("5y55p");
+      // 立て牌と逆で、幅が立て牌の高さになる
+      expect(inlineHtml).toContain("display:inline-block;width:1.5em;height:auto;aspect-ratio:calc(1 / (var(--mj-tile-aspect, 66 / 90)))");
     });
 
     test("アセットが1つも無い場合もエラー表示を読み上げる", () => {

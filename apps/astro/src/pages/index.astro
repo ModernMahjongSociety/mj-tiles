@@ -1,0 +1,500 @@
+---
+import Tile from 'mj-tiles/astro/Tile.astro'
+import Tiles from 'mj-tiles/astro/Tiles.astro'
+import 'mj-tiles/styles.css'
+import '../styles/site.css'
+import SiteHero from '../components/react/SiteHero'
+import SitePlayground from '../components/react/SitePlayground'
+import ReactIsland from '../components/react/IslandDemo'
+import PreactIsland from '../components/preact/IslandDemo'
+import SolidIsland from '../components/solid/IslandDemo'
+import { getRenderer } from 'mj-tiles/astro'
+import pkg from '../../../../packages/mj-tiles/package.json'
+
+const REPO = 'https://github.com/ModernMahjongSociety/mj-tiles'
+
+// コードブロックは JSX の波括弧を Astro の式として解釈させないため、
+// ハイライト済みHTMLを文字列として持ち set:html で流し込む
+const snippets = {
+  react: `<span class="k">import</span> { <span class="t">Tiles</span>, <span class="t">Tile</span> } <span class="k">from</span> <span class="s">"mj-tiles/react"</span>;
+<span class="k">import</span> <span class="s">"mj-tiles/styles.css"</span>;
+
+<span class="k">export function</span> <span class="t">MyHand</span>() {
+  <span class="k">return</span> (
+    &lt;<span class="t">div</span>&gt;
+      &lt;<span class="t">Tiles</span> <span class="a">hand</span>=<span class="s">"234m345p66778s 東東東"</span> /&gt;
+      &lt;<span class="t">p</span>&gt;単騎 &lt;<span class="t">Tile</span> <span class="a">tile</span>=<span class="s">"中"</span> /&gt; 待ち&lt;/<span class="t">p</span>&gt;
+    &lt;/<span class="t">div</span>&gt;
+  );
+}`,
+  hono: `<span class="k">import</span> { <span class="t">TileProvider</span>, <span class="t">Tiles</span> } <span class="k">from</span> <span class="s">"mj-tiles/hono"</span>;
+
+app.get(<span class="s">"/"</span>, (c) =&gt; {
+  <span class="k">return</span> c.html(
+    &lt;<span class="t">TileProvider</span> <span class="a">config</span>={{ styling: <span class="s">"inline"</span> }}&gt;
+      &lt;<span class="t">Tiles</span> <span class="a">hand</span>=<span class="s">"234m345p66778s 東東東"</span> /&gt;
+    &lt;/<span class="t">TileProvider</span>&gt;
+  );
+});`,
+  astro: `<span class="c">---</span>
+<span class="k">import</span> <span class="t">Tiles</span> <span class="k">from</span> <span class="s">'mj-tiles/astro/Tiles.astro'</span>;
+<span class="k">import</span> <span class="s">'mj-tiles/styles.css'</span>;
+<span class="c">---</span>
+
+&lt;<span class="t">Tiles</span> <span class="a">hand</span>=<span class="s">"234m345p66778s 東東東"</span> /&gt;`,
+}
+
+// 3つの island が同じ配列を受け取る。差が出るのはランタイムだけ
+const islandHands = [
+  '234m345p66778s 東東東',
+  '19m19p19s東南西北白發中中',
+  '234m66778s 4-56p 東東東',
+]
+
+// 読み上げ文は描画結果の aria-label / alt そのもの。
+// 手で書き写すと実装とずれるため、生成HTMLから取り出す
+const renderer = getRenderer()
+const readAloud = (html: string) => html.match(/(?:aria-label|alt)="([^"]*)"/)?.[1] ?? ''
+const renderHand = (hand: string) => renderer.handExtended?.(hand) ?? renderer.hand(hand)
+const tileReading = readAloud(renderer.tile('中'))
+const handReading = readAloud(renderHand('234m66778s 4-56p 東東東'))
+// 抽出に失敗したら空の吹き出しを出すより、ビルドを落として気付けるようにする
+if (!tileReading || !handReading) throw new Error('描画結果から読み上げ文を取得できませんでした')
+
+const notationRows = [
+  { symbol: 'm', jp: '萬子 · マンズ', en: 'Man (characters)', example: '123m', hand: '123m', size: 30 },
+  { symbol: 'p', jp: '筒子 · ピンズ', en: 'Pin (circles)', example: '456p', hand: '456p', size: 30 },
+  { symbol: 's', jp: '索子 · ソーズ', en: 'Sou (bamboo)', example: '789s', hand: '789s', size: 30 },
+  { symbol: 'z', symbolJp: '漢字', symbolEn: 'kanji', jp: '字牌 (東南西北白發中)', en: 'Honors — winds & dragons', example: '1234567z', hand: '1234567z', size: 28 },
+  { symbol: '0', symbolAlt: 'r5', jp: '赤ドラ', en: 'Red five', example: '0m r5p 0s', hand: '0m r5p 0s', size: 30 },
+  { symbol: '-', jp: 'チー・ポン・大明槓 (位置=鳴いた相手)', en: 'Chi / Pon / Daiminkan (position = who dealt it)', example: '2-13m', hand: '2-13m', size: 30 },
+  { symbol: '=', jp: '加槓 (ポンから昇格)', en: 'Kakan (upgrade from pon)', example: '55-5=0p', hand: '55-5=0p', size: 30 },
+  { symbol: '+', jp: '暗槓 (4枚+最後に +)', en: 'Ankan (4 tiles + trailing +)', example: '1111+z', hand: '1111+z', size: 30 },
+]
+
+const yaku = [
+  { num: '01 / STANDARD', han: '3飜', jp: '立直・平和・ツモ', en: 'Riichi + Pinfu + Tsumo', roman: 'Riichi · Pinfu · Tsumo', hand: '234m345p66778s 東東東', size: 32 },
+  { num: '02 / YAKUMAN', han: '役満', jp: '国士無双', en: 'Kokushi Musou', roman: 'Thirteen Orphans', hand: '19m19p19s東南西北白發中中', size: 26 },
+  { num: '03 / YAKUMAN', han: '役満', jp: '九蓮宝燈', en: 'Chuuren Poutou', roman: 'Nine Gates', hand: '1112345678999m', size: 28 },
+  { num: '04 / STANDARD', han: '2飜', jp: '七対子', en: 'Chiitoitsu', roman: 'Seven Pairs', hand: '11m33p55p77s99s東東發發', size: 26 },
+  { num: '05 / YAKUMAN', han: '役満', jp: '大三元', en: 'Daisangen', roman: 'Big Three Dragons', hand: '234m88p 白白白 發發發 中中中', size: 26 },
+  { num: '06 / STANDARD', han: '4飜', jp: 'タンヤオ + 赤3', en: 'Tanyao + 3 Red', roman: 'All Simples + 3 Red Fives', hand: '234m234p234s r5mr5pr5s 77p', size: 26 },
+]
+---
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>mj-tiles — 麻雀牌をJSXで</title>
+<meta name="description" content="Draw mahjong hands from a short notation. In the browser. Pure JSX, works with React, Hono, and Astro." />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+<script is:inline>
+  // 描画前に言語を確定させ、JP/EN の入れ替わりが見えないようにする
+  try {
+    const lang = localStorage.getItem('mjt-lang')
+    if (lang) document.documentElement.setAttribute('data-lang', lang)
+  } catch (error) { /* localStorage が使えない環境では既定の JP のまま */ }
+</script>
+</head>
+<body>
+
+<header class="top">
+  <div class="top-inner">
+    <a href="#" class="brand">
+      <span class="name">mj-tiles</span>
+      <span class="ver">v{pkg.version}</span>
+    </a>
+    <nav class="mainnav">
+      <a href="#quickstart"><span class="n">01</span><span>Quick Start</span></a>
+      <a href="#playground"><span class="n">02</span><span>Playground</span></a>
+      <a href="#notation"><span class="n">03</span><span>Notation</span></a>
+      <a href="#reading"><span class="n">04</span><span class="jp">読み上げ</span><span class="en-only">Reading</span></a>
+      <a href="#gallery"><span class="n">05</span><span>Gallery</span></a>
+      <a href={REPO} target="_blank" rel="noopener"><span class="n">06</span><span>GitHub ↗</span></a>
+      <div class="lang" role="group" aria-label="Language">
+        <button type="button" data-lang-set="jp" class="on">JP</button>
+        <button type="button" data-lang-set="en">EN</button>
+      </div>
+    </nav>
+  </div>
+</header>
+
+<section class="hero">
+  <SiteHero client:load />
+</section>
+
+<div class="three-bar">
+  <div class="three-bar-inner">
+    <a href="#quickstart" class="card">
+      <div class="num-label">01 / DOCUMENTATION</div>
+      <h3><span class="jp">導入する</span><span class="en-only">Get started</span></h3>
+      <p><span class="jp">1行のインストールと最初の描画。React・Hono・Astro に対応。</span><span class="en-only">Install, render your first hand, and learn the API for React, Hono, and Astro.</span></p>
+      <div class="arrow"><span class="jp">Quick Start を読む →</span><span class="en-only">Read Quick Start →</span></div>
+    </a>
+    <a href="#playground" class="card">
+      <div class="num-label">02 / PLAYGROUND</div>
+      <h3><span class="jp">試す</span><span class="en-only">Try it live</span></h3>
+      <p><span class="jp">記法を入力して、手牌がそのまま並ぶ。副露も赤ドラも試せる。</span><span class="en-only">Type any notation. Melds, red-fives, and honors all render live.</span></p>
+      <div class="arrow"><span class="jp">Playground を開く →</span><span class="en-only">Open playground →</span></div>
+    </a>
+    <a href="#gallery" class="card">
+      <div class="num-label">03 / EXAMPLES</div>
+      <h3><span class="jp">役の手牌例</span><span class="en-only">Yaku gallery</span></h3>
+      <p><span class="jp">立直平和・国士無双・九蓮宝燈… 実戦の役をそのまま。</span><span class="en-only">Riichi, Kokushi, Chuuren — real yaku, rendered as-is.</span></p>
+      <div class="arrow"><span class="jp">ギャラリーを見る →</span><span class="en-only">Browse examples →</span></div>
+    </a>
+  </div>
+</div>
+
+<section class="pad" id="features">
+  <div class="section-head">
+    <h2>
+      <span class="jp">1つのパッケージ、<br />3つのランタイム。</span>
+      <span class="en-only">One package.<br />Three runtimes.</span>
+      <span class="en">Multi-framework by design.</span>
+    </h2>
+    <p class="lede">
+      <span class="jp">React・Hono JSX・Astro (+ Preact/Solid islands) に対応。サブパスエクスポートで必要な部分だけを取り込めます。TypeScript 完全対応、SSR/CSR 両対応。</span>
+      <span class="en-only">Works with React, Hono JSX, and Astro (+ Preact/Solid islands). Fully typed, SSR + CSR ready, flexible styling.</span>
+    </p>
+  </div>
+  <div class="feat-4">
+    <div>
+      <div class="n">01 / Multi-framework</div>
+      <h4><span class="jp">3ランタイム対応</span><span class="en-only">3 runtimes</span></h4>
+      <p><span class="jp">React・Hono JSX・Astro に対応。サブパスエクスポートで軽く。</span><span class="en-only">React, Hono JSX, and Astro. Subpath exports keep bundles small.</span></p>
+    </div>
+    <div>
+      <div class="n">02 / TypeScript</div>
+      <h4><span class="jp">型で守る</span><span class="en-only">Fully typed</span></h4>
+      <p><span class="jp">牌姿から副露まで、型安全。エディタの補完が牌を選ぶ。</span><span class="en-only">Notation and melds are typed. Autocomplete picks the tiles.</span></p>
+    </div>
+    <div>
+      <div class="n">03 / SSR + CSR</div>
+      <h4><span class="jp">両対応</span><span class="en-only">Both worlds</span></h4>
+      <p><span class="jp">インラインで SSR、URL で軽量 CSR。同じ API。</span><span class="en-only">Inline mode for SSR, URL mode for CSR. Same API either way.</span></p>
+    </div>
+    <div>
+      <div class="n">04 / Styling</div>
+      <h4><span class="jp">柔軟に描く</span><span class="en-only">Flexible</span></h4>
+      <p><span class="jp">CSS クラス or インラインを選択。カスタムアセットも差替可能。</span><span class="en-only">Choose CSS classes or inline styles. Swap in custom assets.</span></p>
+    </div>
+  </div>
+</section>
+
+<section class="pad" id="quickstart">
+  <div class="section-head">
+    <h2>
+      Quick Start
+      <span class="en"><span class="jp">3フレームワーク × 同じ API</span><span class="en-only">3 frameworks · same API</span></span>
+    </h2>
+    <p class="lede">
+      <span class="jp">お使いのフレームワークに合わせて、<code class="inline-code">mj-tiles</code> を導入してください。ライブラリの API はほぼ同一です。</span>
+      <span class="en-only">Install <code class="inline-code">mj-tiles</code> for your framework. The API is nearly identical across all three.</span>
+    </p>
+  </div>
+
+  <div class="install-strip">
+    <span class="sym">$</span>
+    <span>npm install mj-tiles</span>
+    <button type="button" class="copy-btn" data-copy-text="npm install mj-tiles">COPY</button>
+  </div>
+
+  <div data-tabs>
+  <div class="fw-tabs" role="tablist">
+    <button type="button" class="fw-tab on" data-fw="react"><span class="n">01</span>React / Next.js</button>
+    <button type="button" class="fw-tab" data-fw="hono"><span class="n">02</span>Hono JSX</button>
+    <button type="button" class="fw-tab" data-fw="astro"><span class="n">03</span>Astro</button>
+  </div>
+
+  <div class="fw-panel on" data-panel="react">
+    <div class="codeblock">
+      <div class="hdr"><span>App.tsx</span><span class="hdr-right">REACT<button type="button" class="copy-btn" data-copy-pre>COPY</button></span></div>
+      <pre set:html={snippets.react} />
+    </div>
+    <div class="demo-panel">
+      <div class="lbl">Rendered output</div>
+      <div class="render-area grid-paper-sm mj-scope" style="--mj-tile-width: 26px">
+        <Tiles hand="234m345p66778s 東東東" />
+      </div>
+      <div class="demo-caption mj-scope" style="--mj-tile-width: 20px">
+        <span class="jp">単騎 <Tile tile="中" /> 待ち</span>
+        <span class="en-only"><Tile tile="中" /> tanki wait</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="fw-panel" data-panel="hono">
+    <div class="codeblock">
+      <div class="hdr"><span>server.tsx</span><span class="hdr-right">HONO JSX · SSR<button type="button" class="copy-btn" data-copy-pre>COPY</button></span></div>
+      <pre set:html={snippets.hono} />
+    </div>
+    <div class="demo-panel">
+      <div class="lbl">Server rendered</div>
+      <div class="render-area grid-paper-sm mj-scope" style="--mj-tile-width: 26px">
+        <Tiles hand="234m345p66778s 東東東" />
+      </div>
+    </div>
+  </div>
+
+  <div class="fw-panel" data-panel="astro">
+    <div class="codeblock">
+      <div class="hdr"><span>index.astro</span><span class="hdr-right">ASTRO · STATIC<button type="button" class="copy-btn" data-copy-pre>COPY</button></span></div>
+      <pre set:html={snippets.astro} />
+    </div>
+    <div class="demo-panel">
+      <div class="lbl">Static HTML output</div>
+      <div class="render-area grid-paper-sm mj-scope" style="--mj-tile-width: 26px">
+        <Tiles hand="234m345p66778s 東東東" />
+      </div>
+    </div>
+  </div>
+  </div>
+
+  <div class="islands-block" data-tabs>
+    <div class="num-label">
+      <span class="jp">Islands · 同じ事例を3つのランタイムで</span>
+      <span class="en-only">Islands · one example, three runtimes</span>
+    </div>
+    <div class="fw-tabs" role="tablist">
+      <button type="button" class="fw-tab on" data-fw="island-react"><span class="n">01</span>React</button>
+      <button type="button" class="fw-tab" data-fw="island-preact"><span class="n">02</span>Preact</button>
+      <button type="button" class="fw-tab" data-fw="island-solid"><span class="n">03</span>Solid</button>
+    </div>
+    <div class="fw-panel island-panel on" data-panel="island-react">
+      <ReactIsland hands={islandHands} client:load />
+    </div>
+    <div class="fw-panel island-panel" data-panel="island-preact">
+      <PreactIsland hands={islandHands} client:load />
+    </div>
+    <div class="fw-panel island-panel" data-panel="island-solid">
+      <SolidIsland hands={islandHands} client:load />
+    </div>
+    <p class="islands-note">
+      <span class="jp">React は <code class="inline-code">mj-tiles/react</code> の <code class="inline-code">&lt;Tiles&gt;</code>、Preact と Solid はフレームワーク非依存の <code class="inline-code">mj-tiles/core</code> を直接使っています。</span>
+      <span class="en-only">React uses <code class="inline-code">&lt;Tiles&gt;</code> from <code class="inline-code">mj-tiles/react</code>; Preact and Solid call the framework-agnostic <code class="inline-code">mj-tiles/core</code> directly.</span>
+    </p>
+  </div>
+</section>
+
+<section class="pad" id="playground">
+  <div class="section-head">
+    <h2>
+      Playground
+      <span class="en"><span class="jp">記法を打つ、牌が並ぶ。</span><span class="en-only">Type notation. Tiles land.</span></span>
+    </h2>
+    <p class="lede">
+      <span class="jp">左に入力すると、右にそのまま並びます。副露 (鳴き) も赤ドラも国士も、すべて試せます。</span>
+      <span class="en-only">Type on the left, tiles render live on the right. Melds, red-fives, honors — everything works.</span>
+    </p>
+  </div>
+  <SitePlayground client:load />
+</section>
+
+<section class="pad" id="notation">
+  <div class="section-head">
+    <h2>
+      <span class="jp">記法</span><span class="en-only">Notation</span>
+      <span class="en"><span class="jp">MPSZ + 新篠ゆう方式</span><span class="en-only">MPSZ + Yu Arashino</span></span>
+    </h2>
+    <p class="lede">
+      <span class="jp">数牌・字牌・赤ドラ・副露まで、短い文字列で表現できます。<mark>&lt;Tiles hand="..." /&gt;</mark> に渡すだけ。</span>
+      <span class="en-only">Numbers, honors, red-fives, and melds — all in one short string. Just pass it to <mark>&lt;Tiles hand="..." /&gt;</mark>.</span>
+    </p>
+  </div>
+
+  <div class="notation-table">
+    <table>
+      <thead>
+        <tr>
+          <th style="width: 15%">Symbol</th>
+          <th style="width: 30%"><span class="jp">意味</span><span class="en-only">Meaning</span></th>
+          <th style="width: 25%"><span class="jp">例</span><span class="en-only">Example</span></th>
+          <th><span class="jp">描画</span><span class="en-only">Rendered</span></th>
+        </tr>
+      </thead>
+      <tbody>
+        {notationRows.map(row => (
+          <tr>
+            <td>
+              <code>{row.symbol}</code>
+              {row.symbolAlt && <> / <code>{row.symbolAlt}</code></>}
+              {row.symbolJp && <> / <span class="jp">{row.symbolJp}</span><span class="en-only">{row.symbolEn}</span></>}
+            </td>
+            <td class="desc"><span class="jp">{row.jp}</span><span class="en-only">{row.en}</span></td>
+            <td><code>{row.example}</code></td>
+            <td class="render mj-scope" style={`--mj-tile-width: ${row.size}px`}><Tiles hand={row.hand} /></td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  </div>
+
+  <p class="notation-note">
+    <span class="jp"><strong>位置</strong>で鳴いた相手が変わります。1つ目の数字の後 = 上家、2つ目の後 = 対面、3つ目の後 = 下家。詳しくは <a href={`${REPO}/blob/main/docs/notation.md`} target="_blank" rel="noopener">docs/notation.md ↗</a> を参照。</span>
+    <span class="en-only">The <strong>position</strong> of the symbol tells you who dealt the tile — 1st digit = upper opponent, 2nd = across, 3rd = lower. See <a href={`${REPO}/blob/main/docs/notation.md`} target="_blank" rel="noopener">docs/notation.md ↗</a> for the full spec.</span>
+  </p>
+</section>
+
+<section class="pad" id="reading">
+  <div class="section-head">
+    <h2>
+      <span class="jp">読み上げ</span><span class="en-only">Reading</span>
+      <span class="en"><span class="jp">牌の画像に読みが付く</span><span class="en-only">Every tile carries its reading</span></span>
+    </h2>
+    <p class="lede">
+      <span class="jp">牌の画像には読み仮名が入っています。文章の中に置いた牌はその場で読まれ、手牌はひとまとまりの牌譜として読まれます。</span>
+      <span class="en-only">Every tile image carries its reading. A tile placed in a sentence is read in place; a whole hand is announced as a single record.</span>
+    </p>
+  </div>
+
+  <div class="reading-grid">
+    <div class="reading-row">
+      <div>
+        <div class="num-label">01 / <span class="jp">文章中の牌</span><span class="en-only">Tile in a sentence</span></div>
+        <div class="reading-sample grid-paper-sm mj-scope">
+          <span class="jp">単騎 <Tile tile="中" /> 待ち</span>
+          <span class="en-only">Tanki wait on <Tile tile="中" /></span>
+        </div>
+        <code class="reading-src">&lt;p&gt;単騎 &lt;Tile tile="中" /&gt; 待ち&lt;/p&gt;</code>
+      </div>
+      <div class="reading-out">
+        <div class="lbl"><span class="jp">読み上げられる文</span><span class="en-only">Announced as</span></div>
+        <p class="reading-text" lang="ja">単騎 {tileReading} 待ち</p>
+        <p class="reading-note">
+          <span class="jp">牌1枚は <code class="inline-code">alt</code> で読まれるため、前後の文とつながって読まれます。</span>
+          <span class="en-only">A single tile is read from its <code class="inline-code">alt</code>, so it flows with the surrounding sentence.</span>
+        </p>
+      </div>
+    </div>
+
+    <div class="reading-row">
+      <div>
+        <div class="num-label">02 / <span class="jp">牌譜としての手牌</span><span class="en-only">Hand as a record</span></div>
+        <div class="reading-sample grid-paper-sm mj-scope reading-sample-hand">
+          <Tiles hand="234m66778s 4-56p 東東東" />
+        </div>
+        <code class="reading-src">&lt;Tiles hand="234m66778s 4-56p 東東東" /&gt;</code>
+      </div>
+      <div class="reading-out">
+        <div class="lbl"><span class="jp">読み上げられる文</span><span class="en-only">Announced as</span></div>
+        <p class="reading-text" lang="ja">{handReading}</p>
+        <p class="reading-note">
+          <span class="jp">手牌はひとつの <code class="inline-code">role="img"</code> にまとまり、副露は「〜をチーして」のように鳴きごと読まれます。1枚ずつは読まれません。</span>
+          <span class="en-only">A hand becomes one <code class="inline-code">role="img"</code>, and each meld is announced as a call. Tiles are not read one by one.</span>
+        </p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="pad" id="gallery">
+  <div class="section-head">
+    <h2>
+      <span class="jp">役の手牌例</span><span class="en-only">Yaku gallery</span>
+      <span class="en"><span class="jp">実戦の役、そのままJSXで。</span><span class="en-only">Real yaku, rendered as-is.</span></span>
+    </h2>
+    <p class="lede">
+      <span class="jp">実戦で見かける役の手牌を、mj-tiles でそのまま表現した例です。記法をコピーしてすぐ使えます。</span>
+      <span class="en-only">Actual yaku hands, rendered with mj-tiles. Copy the notation and use it right away.</span>
+    </p>
+  </div>
+
+  <div class="yaku-grid">
+    {yaku.map(item => (
+      <div class="yaku-cell">
+        <div class="hdr"><span class="num">{item.num}</span><span class="han">{item.han}</span></div>
+        <div class="name"><span class="jp">{item.jp}</span><span class="en-only">{item.en}</span></div>
+        <div class="en-name">{item.roman}</div>
+        <div class="row mj-scope" style={`--mj-tile-width: ${item.size}px`}><Tiles hand={item.hand} /></div>
+        <div class="src">hand="{item.hand}"</div>
+      </div>
+    ))}
+  </div>
+</section>
+
+<div class="cont-strip">
+  <div class="lbl">CONTINUE</div>
+  <p>
+    <span class="jp">Quick Start を読む、Playground を開く、または GitHub を覗く。</span>
+    <span class="en-only">Read the docs, open the playground, or take a look on GitHub.</span>
+  </p>
+  <div class="row">
+    <a href="#quickstart" class="btn-primary">Quick Start →</a>
+    <a href="#playground" class="btn-secondary">Playground</a>
+    <a href={REPO} target="_blank" rel="noopener" class="btn-secondary">GitHub ↗</a>
+  </div>
+</div>
+
+<footer>
+  <div class="footer-inner">
+    <span>
+      <strong>MJ-TILES</strong>
+      <span class="sep">·</span>MIT
+      <span class="sep">·</span><span class="jp">麻雀牌をJSXで</span><span class="en-only">Mahjong tiles for JSX</span>
+      <span class="sep">·</span>Tile art © majandofu.com
+    </span>
+    <span>
+      <a href={REPO} target="_blank" rel="noopener">GITHUB ↗</a>
+      <a href="https://www.npmjs.com/package/mj-tiles" target="_blank" rel="noopener">NPM ↗</a>
+      <a href={`${REPO}/issues`} target="_blank" rel="noopener">REPORT ISSUE ↗</a>
+    </span>
+  </div>
+</footer>
+
+<script>
+  const applyLang = (lang: string) => {
+    document.documentElement.setAttribute('data-lang', lang)
+    document.querySelectorAll<HTMLElement>('[data-lang-set]').forEach(button => {
+      button.classList.toggle('on', button.dataset.langSet === lang)
+    })
+  }
+  applyLang(document.documentElement.getAttribute('data-lang') ?? 'jp')
+  document.querySelectorAll<HTMLElement>('[data-lang-set]').forEach(button => {
+    button.addEventListener('click', () => {
+      const lang = button.dataset.langSet ?? 'jp'
+      applyLang(lang)
+      try {
+        localStorage.setItem('mjt-lang', lang)
+      } catch (error) { /* 保存できなくても表示は切り替わる */ }
+    })
+  })
+
+  // タブ群はページ内に複数あるため、切り替えは [data-tabs] の中だけに閉じる
+  document.querySelectorAll<HTMLElement>('[data-tabs]').forEach(group => {
+    group.querySelectorAll<HTMLElement>('.fw-tab').forEach(tab => {
+      tab.addEventListener('click', () => {
+        const selected = tab.dataset.fw
+        group.querySelectorAll<HTMLElement>('.fw-tab').forEach(other => {
+          other.classList.toggle('on', other.dataset.fw === selected)
+        })
+        group.querySelectorAll<HTMLElement>('.fw-panel').forEach(panel => {
+          panel.classList.toggle('on', panel.dataset.panel === selected)
+        })
+      })
+    })
+  })
+
+  document.querySelectorAll<HTMLButtonElement>('.copy-btn').forEach(button => {
+    // 連打してもラベルが 'COPIED!' のまま固まらないよう、元の文言は最初に控える
+    const original = button.textContent
+    button.addEventListener('click', async () => {
+      // <pre> は .hdr の兄弟なので、ボタンの親ではなく .codeblock から辿る
+      const code = button.closest('.codeblock')?.querySelector('pre')
+      const text = button.dataset.copyText ?? code?.innerText ?? ''
+      // 空文字を書くとクリップボードを消してしまう
+      if (!text) return
+      try {
+        await navigator.clipboard.writeText(text)
+        button.textContent = 'COPIED!'
+        setTimeout(() => { button.textContent = original }, 1200)
+      } catch (error) { /* コピーできない環境ではラベルを変えない */ }
+    })
+  })
+</script>
+
+</body>
+</html>

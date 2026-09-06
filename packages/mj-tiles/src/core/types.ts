@@ -40,10 +40,18 @@ export interface Hand {
   melds: MeldInfo[];        // 副露面子
 }
 
+export interface TileSize {
+  width: number;
+  height: number;
+}
+
 export interface TileAssets {
   getSvg: (code: TileCode | 'back') => string | null;
   // CSR向けURL参照（横向き対応）。該当する画像が無い場合は undefined を返す
   getUrl?: (code: TileCode | 'back', isRotated?: boolean) => string | undefined;
+  // 画像の実寸。img の width/height に出して遅延読み込み中の場所を確保する。
+  // 寸法が分からないアセットは省略でき、その場合は属性を出さない
+  getSize?: (code: TileCode | 'back', isRotated?: boolean) => TileSize | undefined;
 }
 
 export interface RendererConfig {

@@ -1,4 +1,4 @@
-import { tiles, tilesRotated } from "./generated";
+import { tiles, tilesRotated, tileSize, tileSizeRotated } from "./generated";
 import type { TileAssets, TileCode } from "../core/types";
 
 // WebP画像アセット（base64 data URL）
@@ -12,6 +12,14 @@ export const defaultAssets: TileAssets = {
     }
     return tiles[code];
   },
+  // getUrl と同じ分岐にする。実際に返る画像と寸法がずれると場所取りが狂う。
+  // tilesRotated は牌によっては欠けるので、URLの有無まで含めて揃える
+  getSize: (code: TileCode | 'back', isRotated?: boolean) => {
+    if (isRotated) {
+      return code !== 'back' && tilesRotated[code] ? tileSizeRotated : undefined;
+    }
+    return tileSize;
+  },
 };
 
-export { tiles, tilesRotated };
+export { tiles, tilesRotated, tileSize, tileSizeRotated };

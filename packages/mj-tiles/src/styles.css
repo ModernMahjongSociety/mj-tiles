@@ -7,20 +7,33 @@
  * Tailwindプロジェクトでは、このCSSはそのままインポート可能:
  *   import "mj-tiles/styles.css"
  *
- * Tailwindの utilities クラスで上書きできます:
- *   <Tiles hand="123m" className="h-8" />
+ * 牌の大きさは --mj-tile-height で変えます:
+ *   <div style={{ "--mj-tile-height": "2em" }}><Tiles hand="123m" /></div>
+ *
+ * height だけをクラスで上書きする方法（h-8 など）は勧めません。
+ * 回転済み画像の横向き牌は縦横が逆なので、同じ height を当てると潰れます
  */
 
 @layer components {
   /*
    * 単一の牌
    * .mj-tile.mj-tile で詳細度を (0, 2, 0) に上げ、
-   * .content img などの (0, 1, 1) セレクタに勝つ
+   * .content img などの (0, 1, 1) セレクタに勝つ。
+   *
+   * 幅は auto にして、比率は aspect-ratio で明示する。auto を含む比率
+   * （aspect-ratio: auto 66/90 など）や比率なしの width:auto では、遅延読み込み画像の
+   * 寸法未指定として Chrome DevTools に Issue が出る。
+   * 幅を calc() で固定してしまうと、レイヤー外のCSSで height だけ上書きされたときに
+   * 幅が追従できない。aspect-ratio なら追従する。
+   * --mj-tile-aspect は牌画像の短辺/長辺。付属アセット以外を使う場合は上書きする
    */
   .mj-tile.mj-tile {
     display: inline-block;
     height: var(--mj-tile-height, 1.5em);
     width: auto;
+    aspect-ratio: var(--mj-tile-aspect, 66 / 90);
+    /* aspect-ratio が画像本来の比率を上書きするので、歪ませないために必須 */
+    object-fit: contain;
     vertical-align: var(--mj-tile-vertical-align, -0.3em);
   }
 
@@ -80,6 +93,17 @@
   .mj-tile-rotated {
     transform: rotate(90deg);
     transform-origin: center center;
+  }
+
+  /*
+   * 回転済み画像を使う横向き牌。
+   * 縦横が入れ替わっているため、立て牌の高さがそのまま幅になる
+   */
+  .mj-tile.mj-tile-rotated-image {
+    width: var(--mj-tile-height, 1.5em);
+    height: auto;
+    /* var() は "66 / 90" というトークン列に展開されるため、逆数には括弧が要る */
+    aspect-ratio: calc(1 / (var(--mj-tile-aspect, 66 / 90)));
   }
 
   /* 伏せ牌（暗槓の両端） */

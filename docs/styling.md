@@ -88,6 +88,8 @@ import { TileProvider } from "mj-tiles/react";
 const urlAssets = {
   getSvg: () => null,
   getUrl: (code) => `/tiles/${code}.svg`,
+  // 任意。返すと img に width/height が付き、遅延読み込み中のレイアウトのずれを防げる
+  getSize: () => ({ width: 66, height: 90 }),
 };
 
 function App() {
@@ -118,6 +120,7 @@ mj-tilesはCSS変数を使用しており、簡単にスタイルをカスタマ
 :root {
   /* 牌のサイズ */
   --mj-tile-height: 2em;        /* デフォルト: 1.5em */
+  --mj-tile-aspect: 66 / 90;    /* 牌画像の短辺/長辺。付属アセット以外を使うときだけ変更する */
   --mj-tile-vertical-align: -0.4em;  /* デフォルト: -0.3em */
 
   /* 牌の間隔 */
@@ -131,6 +134,12 @@ mj-tilesはCSS変数を使用しており、簡単にスタイルをカスタマ
 ```
 
 `em`単位を使用しているため、周囲のテキストサイズに応じて自動的にスケールします。
+
+幅は `width: auto` のまま、比率を `aspect-ratio: var(--mj-tile-aspect)` で明示しています。比率を指定しないと
+遅延読み込み画像の寸法未指定として Chrome DevTools に Issue が出る一方、幅を `calc()` で固定してしまうと
+高さを変えたときに幅が追従できなくなるためです。`aspect-ratio` は画像本来の比率を上書きするので、
+縦横比の違う画像に差し替える場合は `--mj-tile-aspect` も合わせて指定してください（指定し忘れても
+`object-fit: contain` により歪まず、余白ができるだけです）。
 
 ---
 
@@ -152,34 +161,34 @@ import "mj-tiles/styles.css";  // Tailwindのスタイルと一緒にインポ�
 Tailwindの`utilities`レイヤーは`components`より優先されるため、ユーティリティクラスで直接スタイルを上書きできます：
 
 ```tsx
-// 牌を大きく表示
-<Tiles hand="123m" className="[&_.mj-tile]:h-8" />
-
 // 間隔を広げる
 <Tiles hand="123m" className="gap-2" />
 ```
 
+ただし**牌の大きさだけは `--mj-tile-height` で指定してください**。`[&_.mj-tile]:h-8` のように高さを
+直接上書きすると、縦横が逆の回転済み画像（副露の横向き牌）に同じ高さが当たってしまい、その牌だけ
+比率が崩れます。`--mj-tile-height` は立て牌・横向き牌の両方が参照するため、どちらも正しく揃います。
+
+```tsx
+<div style={{ "--mj-tile-height": "2em" } as React.CSSProperties}>
+  <Tiles hand="123m 4-56p" />
+</div>
+```
+
 ### CSS変数をTailwindテーマと統合
 
-`tailwind.config.js`でCSS変数をテーマに追加：
+牌のサイズを段階的に使い回したい場合は、ユーティリティではなく`--mj-tile-height`を設定するクラスを用意します：
 
-```js
-// tailwind.config.js
-export default {
-  theme: {
-    extend: {
-      height: {
-        'tile': 'var(--mj-tile-height, 1.5em)',
-        'tile-lg': '2em',
-        'tile-xl': '2.5em',
-      },
-    },
-  },
+```css
+/* globals.css */
+@layer components {
+  .tiles-lg { --mj-tile-height: 2em; }
+  .tiles-xl { --mj-tile-height: 2.5em; }
 }
 ```
 
 ```tsx
-<Tiles hand="123m" className="[&_.mj-tile]:h-tile-lg" />
+<div className="tiles-lg"><Tiles hand="123m 4-56p" /></div>
 ```
 
 ### グローバルでサイズを変更

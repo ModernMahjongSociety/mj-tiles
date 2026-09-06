@@ -1,4 +1,4 @@
-import type { TileCode, RendererConfig, TileRenderer, TileState, MeldInfo, Hand } from "./types";
+import type { TileCode, RendererConfig, TileRenderer, TileState, TileSize, MeldInfo, Hand } from "./types";
 import { parseTile, parseHand, parseHandExtended, getTileLabel, getTileAriaLabel, getTileNumberAria, getTileSuitAria } from "./parser";
 
 // 記法文字列は利用者入力がそのままHTMLに出るため、埋め込む前にエスケープする
@@ -12,7 +12,7 @@ function escapeHtml(text: string): string {
 
 // 1枚の牌をどう見せるか。アセットの解決結果を保持して、描画と読み上げラベルで使い回す
 type TileVisual =
-  | { kind: "image"; url: string; isPreRotated: boolean }
+  | { kind: "image"; url: string; isPreRotated: boolean; size?: TileSize }
   | { kind: "svg"; markup: string }
   | { kind: "error"; label: string };
 
@@ -29,11 +29,15 @@ export function createRenderer(config: RendererConfig): TileRenderer {
     melds: "mj-hand-melds",
     meld: "mj-meld",
     rotated: "mj-tile-rotated",
+    rotatedImage: "mj-tile-rotated-image",
     faceDown: "mj-tile-facedown",
   };
 
   const inlineStyles = {
-    tile: "display:inline-block;height:1.5em;width:auto;vertical-align:-0.3em",
+    tile: "display:inline-block;height:1.5em;width:auto;aspect-ratio:var(--mj-tile-aspect, 66 / 90);object-fit:contain;vertical-align:-0.3em",
+    // 回転済み画像は縦横が逆なので、高さではなく幅を立て牌の高さに合わせる。
+    // 差分ではなく tile の代わりに使う（キー名は cls と揃える必要がある）
+    rotatedImage: "display:inline-block;width:1.5em;height:auto;aspect-ratio:calc(1 / (var(--mj-tile-aspect, 66 / 90)));object-fit:contain;vertical-align:-0.3em",
     tiles: "display:inline-flex;gap:2px;align-items:center;vertical-align:-0.3em",
     error:
       "display:inline-block;padding:2px 4px;color:#dc2626;font-size:12px;background:#fef2f2;border-radius:2px",
@@ -85,13 +89,23 @@ export function createRenderer(config: RendererConfig): TileRenderer {
       return svg ? { kind: "svg", markup: svg } : null;
     };
     const resolveUrl = (): TileVisual | null => {
-      // 横向き専用の画像が無いアセットもあるため、無ければ通常の画像をCSSで回して使う
+      // 横向き専用の画像が無いアセットもあるため、無ければ通常の画像をCSSで回して使う。
+      // 寸法は実際に選んだ画像に合わせて引く。要求した向きで引くと縦横が入れ替わる
       if (tile.isRotated) {
         const rotatedUrl = config.assets.getUrl?.(code, true);
-        if (rotatedUrl) return { kind: "image", url: rotatedUrl, isPreRotated: true };
+        if (rotatedUrl) {
+          return {
+            kind: "image",
+            url: rotatedUrl,
+            isPreRotated: true,
+            size: config.assets.getSize?.(code, true),
+          };
+        }
       }
       const url = config.assets.getUrl?.(code);
-      return url ? { kind: "image", url, isPreRotated: false } : null;
+      return url
+        ? { kind: "image", url, isPreRotated: false, size: config.assets.getSize?.(code) }
+        : null;
     };
 
     const visual = mode === "url" ? resolveUrl() ?? resolveSvg() : resolveSvg() ?? resolveUrl();
@@ -106,15 +120,24 @@ export function createRenderer(config: RendererConfig): TileRenderer {
 
     // 回転済みの画像が使えたときだけCSSでの回転が不要になる
     const rotateWithCss = tile.isRotated === true && (visual.kind === "svg" || !visual.isPreRotated);
+    // 回転済み画像は 90x66 のように縦横が入れ替わっているので、
+    // 立て牌と同じ高さで描くと 1 枚だけ巨大になる。寸法の指定し直しが要る
+    const isPreRotatedImage = tile.isRotated === true && visual.kind === "image" && visual.isPreRotated;
     const classes = [cls.tile];
     if (rotateWithCss) classes.push(cls.rotated);
+    if (isPreRotatedImage) classes.push(cls.rotatedImage);
     if (tile.isFaceDown) classes.push(cls.faceDown);
+    const baseInlineStyle = isPreRotatedImage ? inlineStyles.rotatedImage : inlineStyles.tile;
     const presentation = styling === "inline"
-      ? `style="${rotateWithCss ? `${inlineStyles.tile};${inlineStyles.rotated}` : inlineStyles.tile}"`
+      ? `style="${baseInlineStyle}${rotateWithCss ? `;${inlineStyles.rotated}` : ""}"`
       : `class="${classes.join(' ')}"`;
 
     if (visual.kind === "image") {
-      return `<img ${presentation} src="${visual.url}" alt="${ariaLabel ?? ""}" loading="lazy" />`;
+      // 遅延読み込みの画像は実寸が無いとレイアウトがずれるため、分かる場合は必ず出す
+      const dimensions = visual.size
+        ? ` width="${visual.size.width}" height="${visual.size.height}"`
+        : "";
+      return `<img ${presentation} src="${visual.url}"${dimensions} alt="${ariaLabel ?? ""}" loading="lazy" />`;
     }
 
     const accessibility = ariaLabel === undefined

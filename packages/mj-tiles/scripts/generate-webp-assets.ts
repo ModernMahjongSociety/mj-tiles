@@ -1,4 +1,5 @@
 import { readdir, readFile, writeFile } from "fs/promises";
+import sharp from "sharp";
 import { join } from "path";
 
 const TILES_IMAGES_DIR = "src/assets/tiles-images";
@@ -28,6 +29,9 @@ async function generateAssets() {
 
     const tiles: Record<string, string> = {};
     const tilesRotated: Record<string, string> = {};
+    // img の width/height に出す実寸。牌ごとに違うと1つの定数で表せないので集めて検査する
+    const sizes = new Set<string>();
+    const rotatedSizes = new Set<string>();
 
     let normalCount = 0;
     let rotatedCount = 0;
@@ -38,15 +42,19 @@ async function generateAssets() {
       const base64 = buffer.toString("base64");
       const dataUrl = `data:image/webp;base64,${base64}`;
 
+      const { width, height } = await sharp(buffer).metadata();
+
       if (file.endsWith("-rotated.webp")) {
         // 横向き画像
         const tileCode = file.replace("-rotated.webp", "");
         tilesRotated[tileCode] = dataUrl;
+        rotatedSizes.add(`${width}x${height}`);
         rotatedCount++;
       } else {
         // 通常画像
         const tileCode = file.replace(".webp", "");
         tiles[tileCode] = dataUrl;
+        sizes.add(`${width}x${height}`);
         normalCount++;
       }
     }
@@ -69,6 +77,17 @@ async function generateAssets() {
       );
     }
 
+    // 牌ごとに寸法が違うと単一の定数では表せない。気付かず出力するより止める
+    for (const [label, found] of [["通常", sizes], ["横向き", rotatedSizes]] as const) {
+      if (found.size !== 1) {
+        throw new Error(
+          `${label}画像の寸法が揃っていません: ${[...found].join(", ")}`
+        );
+      }
+    }
+    const [tileWidth, tileHeight] = [...sizes][0].split("x");
+    const [rotatedWidth, rotatedHeight] = [...rotatedSizes][0].split("x");
+
     // TypeScriptコードを生成
     const tilesEntries = Object.entries(tiles)
       .map(([code, dataUrl]) => `  '${code}': '${dataUrl}'`)
@@ -88,6 +107,10 @@ ${tilesEntries}
 export const tilesRotated: Partial<Record<TileCode, string>> = {
 ${tilesRotatedEntries}
 } as const
+
+export const tileSize = { width: ${tileWidth}, height: ${tileHeight} } as const
+
+export const tileSizeRotated = { width: ${rotatedWidth}, height: ${rotatedHeight} } as const
 `;
 
     await writeFile(OUTPUT, output);

@@ -35,3 +35,11 @@ jobs:
 
       - name: Validate HTML snapshots
         run: bun run validate
+
+      - name: Deploy site to Cloudflare Workers
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        working-directory: apps/astro
+        run: bun run deploy
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}

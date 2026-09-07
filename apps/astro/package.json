@@ -6,7 +6,8 @@
     "dev": "astro dev",
     "build": "astro build",
     "test": "bun test src/components",
-    "validate": "bun test src/validate.test.ts"
+    "validate": "bun test src/validate.test.ts",
+    "deploy": "wrangler deploy"
   },
   "dependencies": {
     "mj-tiles": "workspace:*",
@@ -19,5 +20,8 @@
     "react-dom": "^18.0.0",
     "preact": "^10.0.0",
     "solid-js": "^1.8.0"
+  },
+  "devDependencies": {
+    "wrangler": "^4.0.0"
   }
 }

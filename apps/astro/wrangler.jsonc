@@ -1,0 +1,15 @@
+{
+  "$schema": "../../node_modules/wrangler/config-schema.json",
+  "name": "mj-tiles",
+  "compatibility_date": "2026-09-06",
+  // main を持たない静的アセット専用 Worker（Astro の static build をそのまま配信）
+  "assets": {
+    "directory": "./dist"
+  },
+  "routes": [
+    {
+      "pattern": "mj-tiles.modern-jan.com",
+      "custom_domain": true
+    }
+  ]
+}

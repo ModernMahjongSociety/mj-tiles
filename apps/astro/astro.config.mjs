@@ -5,6 +5,7 @@ import preact from '@astrojs/preact'
 import solid from '@astrojs/solid-js'
 
 export default defineConfig({
+  site: 'https://mj-tiles.modern-jan.com',
   integrations: [
     mdx(),
     react({ include: ['**/react/*'] }),

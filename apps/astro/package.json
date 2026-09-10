@@ -5,6 +5,7 @@
   "scripts": {
     "dev": "astro dev",
     "build": "astro build",
+    "deploy": "wrangler deploy",
     "test": "bun test src/components",
     "validate": "bun test src/validate.test.ts"
   },
@@ -19,5 +20,8 @@
     "react-dom": "^18.0.0",
     "preact": "^10.0.0",
     "solid-js": "^1.8.0"
+  },
+  "devDependencies": {
+    "wrangler": "^4.129.1"
   }
 }

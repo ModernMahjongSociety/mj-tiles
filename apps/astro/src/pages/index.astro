@@ -66,19 +66,19 @@ const notationRows = [
   { symbol: 'p', jp: '筒子 · ピンズ', en: 'Pin (circles)', example: '456p', hand: '456p', size: 30 },
   { symbol: 's', jp: '索子 · ソーズ', en: 'Sou (bamboo)', example: '789s', hand: '789s', size: 30 },
   { symbol: 'z', symbolJp: '漢字', symbolEn: 'kanji', jp: '字牌 (東南西北白發中)', en: 'Honors — winds & dragons', example: '1234567z', hand: '1234567z', size: 28 },
-  { symbol: '0', symbolAlt: 'r5', jp: '赤ドラ', en: 'Red five', example: '0m r5p 0s', hand: '0m r5p 0s', size: 30 },
+  { symbol: '0', symbolAlt: 'r5', jp: '赤ドラ', en: 'Red five', example: '0m r5p 0s', hand: '0m r5p 0s', size: 30, accent: 'red' },
   { symbol: '-', jp: 'チー・ポン・大明槓 (位置=鳴いた相手)', en: 'Chi / Pon / Daiminkan (position = who dealt it)', example: '2-13m', hand: '2-13m', size: 30 },
   { symbol: '=', jp: '加槓 (ポンから昇格)', en: 'Kakan (upgrade from pon)', example: '55-5=0p', hand: '55-5=0p', size: 30 },
   { symbol: '+', jp: '暗槓 (4枚+最後に +)', en: 'Ankan (4 tiles + trailing +)', example: '1111+z', hand: '1111+z', size: 30 },
 ]
 
 const yaku = [
-  { num: '01 / STANDARD', han: '3飜', jp: '立直・平和・ツモ', en: 'Riichi + Pinfu + Tsumo', roman: 'Riichi · Pinfu · Tsumo', hand: '234m345p66778s 東東東', size: 32 },
-  { num: '02 / YAKUMAN', han: '役満', jp: '国士無双', en: 'Kokushi Musou', roman: 'Thirteen Orphans', hand: '19m19p19s東南西北白發中中', size: 26 },
-  { num: '03 / YAKUMAN', han: '役満', jp: '九蓮宝燈', en: 'Chuuren Poutou', roman: 'Nine Gates', hand: '1112345678999m', size: 28 },
-  { num: '04 / STANDARD', han: '2飜', jp: '七対子', en: 'Chiitoitsu', roman: 'Seven Pairs', hand: '11m33p55p77s99s東東發發', size: 26 },
-  { num: '05 / YAKUMAN', han: '役満', jp: '大三元', en: 'Daisangen', roman: 'Big Three Dragons', hand: '234m88p 白白白 發發發 中中中', size: 26 },
-  { num: '06 / STANDARD', han: '4飜', jp: 'タンヤオ + 赤3', en: 'Tanyao + 3 Red', roman: 'All Simples + 3 Red Fives', hand: '234m234p234s r5mr5pr5s 77p', size: 26 },
+  { category: 'STANDARD', han: '3飜', jp: '立直・平和・ツモ', en: 'Riichi + Pinfu + Tsumo', roman: 'Riichi · Pinfu · Tsumo', hand: '234m345p66778s 東東東', size: 32 },
+  { category: 'YAKUMAN', han: '役満', jp: '国士無双', en: 'Kokushi Musou', roman: 'Thirteen Orphans', hand: '19m19p19s東南西北白發中中', size: 26 },
+  { category: 'YAKUMAN', han: '役満', jp: '九蓮宝燈', en: 'Chuuren Poutou', roman: 'Nine Gates', hand: '1112345678999m', size: 28 },
+  { category: 'STANDARD', han: '2飜', jp: '七対子', en: 'Chiitoitsu', roman: 'Seven Pairs', hand: '11m33p55p77s99s東東發發', size: 26 },
+  { category: 'YAKUMAN', han: '役満', jp: '大三元', en: 'Daisangen', roman: 'Big Three Dragons', hand: '234m88p 白白白 發發發 中中中', size: 26 },
+  { category: 'STANDARD', han: '4飜', jp: 'タンヤオ + 赤3', en: 'Tanyao + 3 Red', roman: 'All Simples + 3 Red Fives', hand: '234m234p234s r5mr5pr5s 77p', size: 26 },
 ]
 ---
 <!doctype html>
@@ -95,7 +95,11 @@ const yaku = [
   // 描画前に言語を確定させ、JP/EN の入れ替わりが見えないようにする
   try {
     const lang = localStorage.getItem('mjt-lang')
-    if (lang) document.documentElement.setAttribute('data-lang', lang)
+    if (lang) {
+      document.documentElement.setAttribute('data-lang', lang)
+      // data-lang だけでは読み上げ音声が切り替わらない
+      document.documentElement.lang = lang === 'en' ? 'en' : 'ja'
+    }
   } catch (error) { /* localStorage が使えない環境では既定の JP のまま */ }
 </script>
 </head>
@@ -107,20 +111,32 @@ const yaku = [
       <span class="name">mj-tiles</span>
       <span class="ver">v{pkg.version}</span>
     </a>
-    <nav class="mainnav">
-      <a href="#quickstart"><span class="n">01</span><span>Quick Start</span></a>
-      <a href="#playground"><span class="n">02</span><span>Playground</span></a>
-      <a href="#notation"><span class="n">03</span><span>Notation</span></a>
-      <a href="#reading"><span class="n">04</span><span class="jp">読み上げ</span><span class="en-only">Reading</span></a>
-      <a href="#gallery"><span class="n">05</span><span>Gallery</span></a>
-      <a href={REPO} target="_blank" rel="noopener"><span class="n">06</span><span>GitHub ↗</span></a>
-      <div class="lang" role="group" aria-label="Language">
-        <button type="button" data-lang-set="jp" class="on">JP</button>
-        <button type="button" data-lang-set="en">EN</button>
-      </div>
-    </nav>
+    <!-- 既定を open にしてあるのは、JS が動かない環境でもナビを出すため -->
+    <details class="nav-disclosure" open>
+      <summary><span class="nav-bars" aria-hidden="true"></span>MENU</summary>
+      <nav class="mainnav">
+        <a href="#quickstart"><span>Quick Start</span></a>
+        <a href="#playground"><span>Playground</span></a>
+        <a href="#notation"><span>Notation</span></a>
+        <a href="#reading"><span class="jp">読み上げ</span><span class="en-only">Reading</span></a>
+        <a href="#gallery"><span>Gallery</span></a>
+        <a href={REPO} target="_blank" rel="noopener"><span>GitHub ↗</span></a>
+        <div class="lang" role="group" aria-label="Language">
+          <button type="button" data-lang-set="jp" class="on" aria-pressed="true">JP</button>
+          <button type="button" data-lang-set="en" aria-pressed="false">EN</button>
+        </div>
+      </nav>
+    </details>
   </div>
 </header>
+<script is:inline>
+  // 下部のモジュールスクリプトを待つと、開いたメニューが一瞬見えてしまう
+  if (window.matchMedia('(max-width: 760px)').matches) {
+    document.querySelector('.nav-disclosure').open = false
+  }
+</script>
+
+<main>
 
 <section class="hero">
   <SiteHero client:load />
@@ -129,20 +145,17 @@ const yaku = [
 <div class="three-bar">
   <div class="three-bar-inner">
     <a href="#quickstart" class="card">
-      <div class="num-label">01 / DOCUMENTATION</div>
-      <h3><span class="jp">導入する</span><span class="en-only">Get started</span></h3>
+      <h2><span class="jp">導入する</span><span class="en-only">Get started</span></h2>
       <p><span class="jp">1行のインストールと最初の描画。React・Hono・Astro に対応。</span><span class="en-only">Install, render your first hand, and learn the API for React, Hono, and Astro.</span></p>
       <div class="arrow"><span class="jp">Quick Start を読む →</span><span class="en-only">Read Quick Start →</span></div>
     </a>
     <a href="#playground" class="card">
-      <div class="num-label">02 / PLAYGROUND</div>
-      <h3><span class="jp">試す</span><span class="en-only">Try it live</span></h3>
+      <h2><span class="jp">試す</span><span class="en-only">Try it live</span></h2>
       <p><span class="jp">記法を入力して、手牌がそのまま並ぶ。副露も赤ドラも試せる。</span><span class="en-only">Type any notation. Melds, red-fives, and honors all render live.</span></p>
       <div class="arrow"><span class="jp">Playground を開く →</span><span class="en-only">Open playground →</span></div>
     </a>
     <a href="#gallery" class="card">
-      <div class="num-label">03 / EXAMPLES</div>
-      <h3><span class="jp">役の手牌例</span><span class="en-only">Yaku gallery</span></h3>
+      <h2><span class="jp">役の手牌例</span><span class="en-only">Yaku gallery</span></h2>
       <p><span class="jp">立直平和・国士無双・九蓮宝燈… 実戦の役をそのまま。</span><span class="en-only">Riichi, Kokushi, Chuuren — real yaku, rendered as-is.</span></p>
       <div class="arrow"><span class="jp">ギャラリーを見る →</span><span class="en-only">Browse examples →</span></div>
     </a>
@@ -154,7 +167,7 @@ const yaku = [
     <h2>
       <span class="jp">1つのパッケージ、<br />3つのランタイム。</span>
       <span class="en-only">One package.<br />Three runtimes.</span>
-      <span class="en">Multi-framework by design.</span>
+      <span class="en" lang="en">Multi-framework by design.</span>
     </h2>
     <p class="lede">
       <span class="jp">React・Hono JSX・Astro (+ Preact/Solid islands) に対応。サブパスエクスポートで必要な部分だけを取り込めます。TypeScript 完全対応、SSR/CSR 両対応。</span>
@@ -163,23 +176,23 @@ const yaku = [
   </div>
   <div class="feat-4">
     <div>
-      <div class="n">01 / Multi-framework</div>
-      <h4><span class="jp">3ランタイム対応</span><span class="en-only">3 runtimes</span></h4>
+      <div class="n">Multi-framework</div>
+      <h3><span class="jp">3ランタイム対応</span><span class="en-only">3 runtimes</span></h3>
       <p><span class="jp">React・Hono JSX・Astro に対応。サブパスエクスポートで軽く。</span><span class="en-only">React, Hono JSX, and Astro. Subpath exports keep bundles small.</span></p>
     </div>
     <div>
-      <div class="n">02 / TypeScript</div>
-      <h4><span class="jp">型で守る</span><span class="en-only">Fully typed</span></h4>
+      <div class="n">TypeScript</div>
+      <h3><span class="jp">型で守る</span><span class="en-only">Fully typed</span></h3>
       <p><span class="jp">牌姿から副露まで、型安全。エディタの補完が牌を選ぶ。</span><span class="en-only">Notation and melds are typed. Autocomplete picks the tiles.</span></p>
     </div>
     <div>
-      <div class="n">03 / SSR + CSR</div>
-      <h4><span class="jp">両対応</span><span class="en-only">Both worlds</span></h4>
+      <div class="n">SSR + CSR</div>
+      <h3><span class="jp">両対応</span><span class="en-only">Both worlds</span></h3>
       <p><span class="jp">インラインで SSR、URL で軽量 CSR。同じ API。</span><span class="en-only">Inline mode for SSR, URL mode for CSR. Same API either way.</span></p>
     </div>
     <div>
-      <div class="n">04 / Styling</div>
-      <h4><span class="jp">柔軟に描く</span><span class="en-only">Flexible</span></h4>
+      <div class="n">Styling</div>
+      <h3><span class="jp">柔軟に描く</span><span class="en-only">Flexible</span></h3>
       <p><span class="jp">CSS クラス or インラインを選択。カスタムアセットも差替可能。</span><span class="en-only">Choose CSS classes or inline styles. Swap in custom assets.</span></p>
     </div>
   </div>
@@ -205,12 +218,12 @@ const yaku = [
 
   <div data-tabs>
   <div class="fw-tabs" role="tablist">
-    <button type="button" class="fw-tab on" data-fw="react"><span class="n">01</span>React / Next.js</button>
-    <button type="button" class="fw-tab" data-fw="hono"><span class="n">02</span>Hono JSX</button>
-    <button type="button" class="fw-tab" data-fw="astro"><span class="n">03</span>Astro</button>
+    <button type="button" class="fw-tab on" role="tab" id="tab-react" aria-controls="panel-react" aria-selected="true" tabindex="0" data-fw="react">React / Next.js</button>
+    <button type="button" class="fw-tab" role="tab" id="tab-hono" aria-controls="panel-hono" aria-selected="false" tabindex="-1" data-fw="hono">Hono JSX</button>
+    <button type="button" class="fw-tab" role="tab" id="tab-astro" aria-controls="panel-astro" aria-selected="false" tabindex="-1" data-fw="astro">Astro</button>
   </div>
 
-  <div class="fw-panel on" data-panel="react">
+  <div class="fw-panel on" data-panel="react" role="tabpanel" id="panel-react" aria-labelledby="tab-react" tabindex="0">
     <div class="codeblock">
       <div class="hdr"><span>App.tsx</span><span class="hdr-right">REACT<button type="button" class="copy-btn" data-copy-pre>COPY</button></span></div>
       <pre set:html={snippets.react} />
@@ -227,7 +240,7 @@ const yaku = [
     </div>
   </div>
 
-  <div class="fw-panel" data-panel="hono">
+  <div class="fw-panel" data-panel="hono" role="tabpanel" id="panel-hono" aria-labelledby="tab-hono" tabindex="0">
     <div class="codeblock">
       <div class="hdr"><span>server.tsx</span><span class="hdr-right">HONO JSX · SSR<button type="button" class="copy-btn" data-copy-pre>COPY</button></span></div>
       <pre set:html={snippets.hono} />
@@ -240,7 +253,7 @@ const yaku = [
     </div>
   </div>
 
-  <div class="fw-panel" data-panel="astro">
+  <div class="fw-panel" data-panel="astro" role="tabpanel" id="panel-astro" aria-labelledby="tab-astro" tabindex="0">
     <div class="codeblock">
       <div class="hdr"><span>index.astro</span><span class="hdr-right">ASTRO · STATIC<button type="button" class="copy-btn" data-copy-pre>COPY</button></span></div>
       <pre set:html={snippets.astro} />
@@ -260,17 +273,17 @@ const yaku = [
       <span class="en-only">Islands · one example, three runtimes</span>
     </div>
     <div class="fw-tabs" role="tablist">
-      <button type="button" class="fw-tab on" data-fw="island-react"><span class="n">01</span>React</button>
-      <button type="button" class="fw-tab" data-fw="island-preact"><span class="n">02</span>Preact</button>
-      <button type="button" class="fw-tab" data-fw="island-solid"><span class="n">03</span>Solid</button>
+      <button type="button" class="fw-tab on" role="tab" id="tab-island-react" aria-controls="panel-island-react" aria-selected="true" tabindex="0" data-fw="island-react">React</button>
+      <button type="button" class="fw-tab" role="tab" id="tab-island-preact" aria-controls="panel-island-preact" aria-selected="false" tabindex="-1" data-fw="island-preact">Preact</button>
+      <button type="button" class="fw-tab" role="tab" id="tab-island-solid" aria-controls="panel-island-solid" aria-selected="false" tabindex="-1" data-fw="island-solid">Solid</button>
     </div>
-    <div class="fw-panel island-panel on" data-panel="island-react">
+    <div class="fw-panel island-panel on" data-panel="island-react" role="tabpanel" id="panel-island-react" aria-labelledby="tab-island-react" tabindex="0">
       <ReactIsland hands={islandHands} client:load />
     </div>
-    <div class="fw-panel island-panel" data-panel="island-preact">
+    <div class="fw-panel island-panel" data-panel="island-preact" role="tabpanel" id="panel-island-preact" aria-labelledby="tab-island-preact" tabindex="0">
       <PreactIsland hands={islandHands} client:load />
     </div>
-    <div class="fw-panel island-panel" data-panel="island-solid">
+    <div class="fw-panel island-panel" data-panel="island-solid" role="tabpanel" id="panel-island-solid" aria-labelledby="tab-island-solid" tabindex="0">
       <SolidIsland hands={islandHands} client:load />
     </div>
     <p class="islands-note">
@@ -281,7 +294,7 @@ const yaku = [
 </section>
 
 <section class="pad" id="playground">
-  <div class="section-head">
+  <div class="section-head section-head--demo">
     <h2>
       Playground
       <span class="en"><span class="jp">記法を打つ、牌が並ぶ。</span><span class="en-only">Type notation. Tiles land.</span></span>
@@ -295,7 +308,7 @@ const yaku = [
 </section>
 
 <section class="pad" id="notation">
-  <div class="section-head">
+  <div class="section-head section-head--reference">
     <h2>
       <span class="jp">記法</span><span class="en-only">Notation</span>
       <span class="en"><span class="jp">MPSZ + 新篠ゆう方式</span><span class="en-only">MPSZ + Yu Arashino</span></span>
@@ -318,7 +331,7 @@ const yaku = [
       </thead>
       <tbody>
         {notationRows.map(row => (
-          <tr>
+          <tr class={row.accent === 'red' ? 'red' : undefined}>
             <td>
               <code>{row.symbol}</code>
               {row.symbolAlt && <> / <code>{row.symbolAlt}</code></>}
@@ -333,14 +346,25 @@ const yaku = [
     </table>
   </div>
 
-  <p class="notation-note">
-    <span class="jp"><strong>位置</strong>で鳴いた相手が変わります。1つ目の数字の後 = 上家、2つ目の後 = 対面、3つ目の後 = 下家。詳しくは <a href={`${REPO}/blob/main/docs/notation.md`} target="_blank" rel="noopener">docs/notation.md ↗</a> を参照。</span>
-    <span class="en-only">The <strong>position</strong> of the symbol tells you who dealt the tile — 1st digit = upper opponent, 2nd = across, 3rd = lower. See <a href={`${REPO}/blob/main/docs/notation.md`} target="_blank" rel="noopener">docs/notation.md ↗</a> for the full spec.</span>
-  </p>
+  <div class="notation-note">
+    <p>
+      <span class="jp">副露記号を<strong>どの数字の後ろに置くか</strong>で、鳴いた相手が決まります。</span>
+      <span class="en-only">Where you place the meld symbol decides <strong>who dealt the tile</strong>.</span>
+    </p>
+    <ol class="positions">
+      <li><code>2-13m</code><span class="jp">1つ目の数字の後 — 上家から</span><span class="en-only">After the 1st digit — from the player to your left</span></li>
+      <li><code>12-3m</code><span class="jp">2つ目の後 — 対面から</span><span class="en-only">After the 2nd — from the player across</span></li>
+      <li><code>123-m</code><span class="jp">3つ目の後 — 下家から</span><span class="en-only">After the 3rd — from the player to your right</span></li>
+    </ol>
+    <p>
+      <span class="jp">全仕様は <a href={`${REPO}/blob/main/docs/notation.md`} target="_blank" rel="noopener">docs/notation.md ↗</a> にあります。</span>
+      <span class="en-only">The full spec is in <a href={`${REPO}/blob/main/docs/notation.md`} target="_blank" rel="noopener">docs/notation.md ↗</a>.</span>
+    </p>
+  </div>
 </section>
 
 <section class="pad" id="reading">
-  <div class="section-head">
+  <div class="section-head section-head--reference">
     <h2>
       <span class="jp">読み上げ</span><span class="en-only">Reading</span>
       <span class="en"><span class="jp">牌の画像に読みが付く</span><span class="en-only">Every tile carries its reading</span></span>
@@ -354,7 +378,7 @@ const yaku = [
   <div class="reading-grid">
     <div class="reading-row">
       <div>
-        <div class="num-label">01 / <span class="jp">文章中の牌</span><span class="en-only">Tile in a sentence</span></div>
+        <div class="num-label"><span class="jp">文章中の牌</span><span class="en-only">Tile in a sentence</span></div>
         <div class="reading-sample grid-paper-sm mj-scope">
           <span class="jp">単騎 <Tile tile="中" /> 待ち</span>
           <span class="en-only">Tanki wait on <Tile tile="中" /></span>
@@ -373,7 +397,7 @@ const yaku = [
 
     <div class="reading-row">
       <div>
-        <div class="num-label">02 / <span class="jp">牌譜としての手牌</span><span class="en-only">Hand as a record</span></div>
+        <div class="num-label"><span class="jp">牌譜としての手牌</span><span class="en-only">Hand as a record</span></div>
         <div class="reading-sample grid-paper-sm mj-scope reading-sample-hand">
           <Tiles hand="234m66778s 4-56p 東東東" />
         </div>
@@ -392,7 +416,7 @@ const yaku = [
 </section>
 
 <section class="pad" id="gallery">
-  <div class="section-head">
+  <div class="section-head section-head--demo">
     <h2>
       <span class="jp">役の手牌例</span><span class="en-only">Yaku gallery</span>
       <span class="en"><span class="jp">実戦の役、そのままJSXで。</span><span class="en-only">Real yaku, rendered as-is.</span></span>
@@ -406,10 +430,10 @@ const yaku = [
   <div class="yaku-grid">
     {yaku.map(item => (
       <div class="yaku-cell">
-        <div class="hdr"><span class="num">{item.num}</span><span class="han">{item.han}</span></div>
+        <div class="hdr"><span class="num">{item.category}</span><span class={item.category === 'YAKUMAN' ? 'han yakuman' : 'han'}>{item.han}</span></div>
         <div class="name"><span class="jp">{item.jp}</span><span class="en-only">{item.en}</span></div>
-        <div class="en-name">{item.roman}</div>
-        <div class="row mj-scope" style={`--mj-tile-width: ${item.size}px`}><Tiles hand={item.hand} /></div>
+        <div class="en-name" lang="en">{item.roman}</div>
+        <div class="row mj-scope" style={`--mj-tile-width: min(${item.size}px, calc((100cqw - 40px) / 15))`}><Tiles hand={item.hand} /></div>
         <div class="src">hand="{item.hand}"</div>
       </div>
     ))}
@@ -417,7 +441,6 @@ const yaku = [
 </section>
 
 <div class="cont-strip">
-  <div class="lbl">CONTINUE</div>
   <p>
     <span class="jp">Quick Start を読む、Playground を開く、または GitHub を覗く。</span>
     <span class="en-only">Read the docs, open the playground, or take a look on GitHub.</span>
@@ -429,6 +452,8 @@ const yaku = [
   </div>
 </div>
 
+</main>
+
 <footer>
   <div class="footer-inner">
     <span>
@@ -438,9 +463,9 @@ const yaku = [
       <span class="sep">·</span>Tile art © majandofu.com
     </span>
     <span>
-      <a href={REPO} target="_blank" rel="noopener">GITHUB ↗</a>
-      <a href="https://www.npmjs.com/package/mj-tiles" target="_blank" rel="noopener">NPM ↗</a>
-      <a href={`${REPO}/issues`} target="_blank" rel="noopener">REPORT ISSUE ↗</a>
+      <a href={REPO} target="_blank" rel="noopener">GitHub ↗</a>
+      <a href="https://www.npmjs.com/package/mj-tiles" target="_blank" rel="noopener">npm ↗</a>
+      <a href={`${REPO}/issues`} target="_blank" rel="noopener"><span class="jp">不具合を報告 ↗</span><span class="en-only">Report an issue ↗</span></a>
     </span>
   </div>
 </footer>
@@ -448,11 +473,25 @@ const yaku = [
 <script>
   const applyLang = (lang: string) => {
     document.documentElement.setAttribute('data-lang', lang)
+    // data-lang は表示切替用。読み上げ音声は lang 属性でしか切り替わらない
+    document.documentElement.lang = lang === 'en' ? 'en' : 'ja'
     document.querySelectorAll<HTMLElement>('[data-lang-set]').forEach(button => {
       button.classList.toggle('on', button.dataset.langSet === lang)
+      button.setAttribute('aria-pressed', String(button.dataset.langSet === lang))
     })
   }
   applyLang(document.documentElement.getAttribute('data-lang') ?? 'jp')
+  const narrow = window.matchMedia('(max-width: 760px)')
+  const navDisclosure = document.querySelector<HTMLDetailsElement>('.nav-disclosure')
+  if (navDisclosure) {
+    // summary はデスクトップでは非表示にするため、閉じたままだとナビが消える
+    narrow.addEventListener('change', () => { navDisclosure.open = !narrow.matches })
+    // ページ内リンクなので、開いたままだと飛んだ先がメニューに隠れる
+    navDisclosure.querySelectorAll('a').forEach(link => {
+      link.addEventListener('click', () => { if (narrow.matches) navDisclosure.open = false })
+    })
+  }
+
   document.querySelectorAll<HTMLElement>('[data-lang-set]').forEach(button => {
     button.addEventListener('click', () => {
       const lang = button.dataset.langSet ?? 'jp'
@@ -465,15 +504,29 @@ const yaku = [
 
   // タブ群はページ内に複数あるため、切り替えは [data-tabs] の中だけに閉じる
   document.querySelectorAll<HTMLElement>('[data-tabs]').forEach(group => {
-    group.querySelectorAll<HTMLElement>('.fw-tab').forEach(tab => {
-      tab.addEventListener('click', () => {
-        const selected = tab.dataset.fw
-        group.querySelectorAll<HTMLElement>('.fw-tab').forEach(other => {
-          other.classList.toggle('on', other.dataset.fw === selected)
-        })
-        group.querySelectorAll<HTMLElement>('.fw-panel').forEach(panel => {
-          panel.classList.toggle('on', panel.dataset.panel === selected)
-        })
+    const tabs = [...group.querySelectorAll<HTMLElement>('.fw-tab')]
+    const select = (tab: HTMLElement) => {
+      const selected = tab.dataset.fw
+      tabs.forEach(other => {
+        const on = other.dataset.fw === selected
+        other.classList.toggle('on', on)
+        other.setAttribute('aria-selected', String(on))
+        // ロービングタブインデックス: タブ群全体を Tab キー1回で通過させる
+        other.tabIndex = on ? 0 : -1
+      })
+      group.querySelectorAll<HTMLElement>('.fw-panel').forEach(panel => {
+        panel.classList.toggle('on', panel.dataset.panel === selected)
+      })
+    }
+    tabs.forEach((tab, index) => {
+      tab.addEventListener('click', () => select(tab))
+      tab.addEventListener('keydown', event => {
+        const step = { ArrowRight: 1, ArrowLeft: -1, Home: -index, End: tabs.length - 1 - index }[event.key]
+        if (step === undefined) return
+        event.preventDefault()
+        const next = tabs[(index + step + tabs.length) % tabs.length]
+        select(next)
+        next.focus()
       })
     })
   })

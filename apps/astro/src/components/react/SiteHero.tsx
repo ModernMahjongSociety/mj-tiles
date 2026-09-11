@@ -100,11 +100,6 @@ export default function SiteHero() {
   return (
     <div className="hero-grid">
       <div>
-        <div className="eyebrow">
-          <span>Open source · MIT</span>
-          <span className="sep" />
-          <span>Modern Mahjong Society</span>
-        </div>
         <h1 className="h1">
           <span className="jp">
             麻雀の手牌を、<mark>JSX</mark> で。<br />ブラウザに、そのまま並ぶ。
@@ -116,7 +111,7 @@ export default function SiteHero() {
         <p className="lede">
           <span className="jp">React・Hono・Astro のためのマルチフレームワーク対応ライブラリ。サーバー不要、画像不要、依存ゼロ。ただ短い記法を書くだけ。</span>
           <span className="en-only">A multi-framework library for rendering mahjong hands. No server, no images, no dependencies. Just a short notation string.</span>
-          <span className="en jp">A multi-framework mahjong tile renderer. No server, no images, no dependencies.</span>
+          <span className="en jp" lang="en">A multi-framework mahjong tile renderer. No server, no images, no dependencies.</span>
         </p>
         <div className="hero-cta">
           <a href="#quickstart" className="btn-primary">
@@ -130,7 +125,7 @@ export default function SiteHero() {
         </div>
 
         <div className="presets-block">
-          <div className="num-label">Presets · try one</div>
+          <div className="num-label"><span className="jp">プリセットから試す</span><span className="en-only">Start from a preset</span></div>
           <div className="presets">
             {PRESETS.map(preset => (
               <button
@@ -139,7 +134,7 @@ export default function SiteHero() {
                 className={preset.hand === notation ? 'preset-btn on' : 'preset-btn'}
                 onClick={() => setNotation(preset.hand)}
               >
-                <span className="tag">{preset.tag}</span>
+                <span className={preset.tag.startsWith('赤') ? 'tag red' : 'tag'}>{preset.tag}</span>
                 <span className="name">{preset.name}</span>
               </button>
             ))}
@@ -150,8 +145,7 @@ export default function SiteHero() {
       <div>
         <div className="preview-frame">
           <div className="preview-hdr">
-            <span className="live"><span className="dot" />LIVE PREVIEW</span>
-            <span>RENDER ENGINE · WEBP</span>
+            <span className="live"><span className="dot" />Live preview</span>
           </div>
           <div
             className="preview-body grid-paper mj-scope"

@@ -26,10 +26,6 @@ export default function SitePlayground() {
 
   return (
     <div className="pg-frame">
-      <div className="pg-hdr">
-        <span className="live"><span className="dot" />LIVE PLAYGROUND</span>
-        <span>PARSER · parseHandExtended()</span>
-      </div>
       <div className="pg-body">
         <div className="pg-in">
           <label className="lbl" htmlFor="pg-input">Hand notation</label>
